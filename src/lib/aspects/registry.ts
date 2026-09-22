@@ -2,12 +2,14 @@ import { AspectAnswers, AspectDefinition } from "./types";
 import { programmingLanguage } from "./programming-language";
 import { framework } from "./framework";
 import { database } from "./database";
+import { cssTooling } from "./css-tooling";
 
 // Add one entry per new aspect page here. Order controls display order.
 export const aspects: AspectDefinition[] = [
   programmingLanguage,
   framework,
   database,
+  cssTooling,
 ];
 
 export function getAspect(key: string): AspectDefinition | undefined {
