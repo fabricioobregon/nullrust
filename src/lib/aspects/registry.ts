@@ -15,6 +15,7 @@ import { infrastructure } from "./infrastructure";
 import { caching } from "./caching";
 import { messagingBackgroundJobs } from "./messaging-background-jobs";
 import { documentation } from "./documentation";
+import { dataValidationState } from "./data-validation-state";
 
 // Add one entry per new aspect page here. Order controls display order.
 export const aspects: AspectDefinition[] = [
@@ -34,6 +35,7 @@ export const aspects: AspectDefinition[] = [
   caching,
   messagingBackgroundJobs,
   documentation,
+  dataValidationState,
 ];
 
 export function getAspect(key: string): AspectDefinition | undefined {
