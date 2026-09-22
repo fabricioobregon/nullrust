@@ -1,0 +1,35 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// A project represents one target repo the user is generating an AGENTS.md for.
+model Project {
+  id          String             @id @default(cuid())
+  name        String
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  preferences AspectPreference[]
+}
+
+// One row per (project, aspect) - e.g. project X's "database" choices.
+// `data` is a JSON blob keyed by field id from that aspect's registry definition,
+// so adding a new field to an aspect never requires a migration.
+model AspectPreference {
+  id         String   @id @default(cuid())
+  projectId  String
+  aspectKey  String
+  data       String // JSON-encoded Record<string, string | string[]>
+  updatedAt  DateTime @updatedAt
+  project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, aspectKey])
+}
