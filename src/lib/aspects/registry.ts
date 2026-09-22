@@ -5,6 +5,7 @@ import { database } from "./database";
 import { cssTooling } from "./css-tooling";
 import { ciCd } from "./ci-cd";
 import { testing } from "./testing";
+import { observability } from "./observability";
 
 // Add one entry per new aspect page here. Order controls display order.
 export const aspects: AspectDefinition[] = [
@@ -14,6 +15,7 @@ export const aspects: AspectDefinition[] = [
   cssTooling,
   ciCd,
   testing,
+  observability,
 ];
 
 export function getAspect(key: string): AspectDefinition | undefined {
