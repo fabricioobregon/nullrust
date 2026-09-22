@@ -11,6 +11,7 @@ import { auth } from "./auth";
 import { security } from "./security";
 import { lintingFormatting } from "./linting-formatting";
 import { gitWorkflow } from "./git-workflow";
+import { infrastructure } from "./infrastructure";
 
 // Add one entry per new aspect page here. Order controls display order.
 export const aspects: AspectDefinition[] = [
@@ -26,6 +27,7 @@ export const aspects: AspectDefinition[] = [
   security,
   lintingFormatting,
   gitWorkflow,
+  infrastructure,
 ];
 
 export function getAspect(key: string): AspectDefinition | undefined {
