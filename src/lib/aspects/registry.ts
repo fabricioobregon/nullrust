@@ -8,6 +8,7 @@ import { testing } from "./testing";
 import { observability } from "./observability";
 import { apiDesign } from "./api-design";
 import { auth } from "./auth";
+import { security } from "./security";
 
 // Add one entry per new aspect page here. Order controls display order.
 export const aspects: AspectDefinition[] = [
@@ -20,6 +21,7 @@ export const aspects: AspectDefinition[] = [
   observability,
   apiDesign,
   auth,
+  security,
 ];
 
 export function getAspect(key: string): AspectDefinition | undefined {
