@@ -14,6 +14,7 @@ import { gitWorkflow } from "./git-workflow";
 import { infrastructure } from "./infrastructure";
 import { caching } from "./caching";
 import { messagingBackgroundJobs } from "./messaging-background-jobs";
+import { documentation } from "./documentation";
 
 // Add one entry per new aspect page here. Order controls display order.
 export const aspects: AspectDefinition[] = [
@@ -32,6 +33,7 @@ export const aspects: AspectDefinition[] = [
   infrastructure,
   caching,
   messagingBackgroundJobs,
+  documentation,
 ];
 
 export function getAspect(key: string): AspectDefinition | undefined {
