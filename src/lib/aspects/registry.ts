@@ -3,6 +3,7 @@ import { programmingLanguage } from "./programming-language";
 import { framework } from "./framework";
 import { database } from "./database";
 import { cssTooling } from "./css-tooling";
+import { ciCd } from "./ci-cd";
 
 // Add one entry per new aspect page here. Order controls display order.
 export const aspects: AspectDefinition[] = [
@@ -10,6 +11,7 @@ export const aspects: AspectDefinition[] = [
   framework,
   database,
   cssTooling,
+  ciCd,
 ];
 
 export function getAspect(key: string): AspectDefinition | undefined {
