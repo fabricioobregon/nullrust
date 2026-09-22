@@ -7,6 +7,7 @@ import { ciCd } from "./ci-cd";
 import { testing } from "./testing";
 import { observability } from "./observability";
 import { apiDesign } from "./api-design";
+import { auth } from "./auth";
 
 // Add one entry per new aspect page here. Order controls display order.
 export const aspects: AspectDefinition[] = [
@@ -18,6 +19,7 @@ export const aspects: AspectDefinition[] = [
   testing,
   observability,
   apiDesign,
+  auth,
 ];
 
 export function getAspect(key: string): AspectDefinition | undefined {
