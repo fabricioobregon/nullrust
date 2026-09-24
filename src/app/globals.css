@@ -1,26 +1,22 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Light-only for now, independent of the OS/browser preference, so native
+     form controls (checkboxes, radios, scrollbars) render consistently. */
+  color-scheme: light;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
-}
+/*
+ * This app is light-themed only for now (no dark mode UI has been built).
+ * Background/text color are set via Tailwind classes on <body> in layout.tsx.
+ * Deliberately no plain `body { color/background }` rule here: unlayered CSS
+ * always wins over Tailwind's layered utility classes regardless of
+ * specificity, so a rule like that would silently override text-slate-900 /
+ * bg-slate-50 the moment prefers-color-scheme: dark is set — that's what
+ * caused white-on-white text previously.
+ */
