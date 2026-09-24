@@ -18,6 +18,7 @@ import { documentation } from "./documentation";
 import { dataValidationState } from "./data-validation-state";
 import { packageManagement } from "./package-management";
 import { dataPrivacyCompliance } from "./data-privacy-compliance";
+import { accessibility } from "./accessibility";
 
 // Add one entry per new aspect page here. Order controls display order.
 export const aspects: AspectDefinition[] = [
@@ -40,6 +41,7 @@ export const aspects: AspectDefinition[] = [
   dataValidationState,
   packageManagement,
   dataPrivacyCompliance,
+  accessibility,
 ];
 
 export function getAspect(key: string): AspectDefinition | undefined {
