@@ -22,6 +22,7 @@ import { accessibility } from "./accessibility";
 import { featureFlags } from "./feature-flags";
 import { analytics } from "./analytics";
 import { backupDisasterRecovery } from "./backup-disaster-recovery";
+import { i18nLocalization } from "./i18n-localization";
 
 // Add one entry per new aspect page here. Order controls display order.
 export const aspects: AspectDefinition[] = [
@@ -48,6 +49,7 @@ export const aspects: AspectDefinition[] = [
   featureFlags,
   analytics,
   backupDisasterRecovery,
+  i18nLocalization,
 ];
 
 export function getAspect(key: string): AspectDefinition | undefined {
