@@ -17,6 +17,7 @@ import { messagingBackgroundJobs } from "./messaging-background-jobs";
 import { documentation } from "./documentation";
 import { dataValidationState } from "./data-validation-state";
 import { packageManagement } from "./package-management";
+import { dataPrivacyCompliance } from "./data-privacy-compliance";
 
 // Add one entry per new aspect page here. Order controls display order.
 export const aspects: AspectDefinition[] = [
@@ -38,6 +39,7 @@ export const aspects: AspectDefinition[] = [
   documentation,
   dataValidationState,
   packageManagement,
+  dataPrivacyCompliance,
 ];
 
 export function getAspect(key: string): AspectDefinition | undefined {
