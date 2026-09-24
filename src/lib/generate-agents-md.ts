@@ -1,5 +1,6 @@
-import { aspects } from "@/lib/aspects/registry";
+import { aspectsForRepo } from "@/lib/aspects/registry";
 import { AspectAnswers, AspectDefinition, AspectField } from "@/lib/aspects/types";
+import { RepoKey } from "@/lib/repos";
 
 function optionLabel(field: AspectField, value: string): string {
   return field.options?.find((o) => o.value === value)?.label ?? value;
@@ -41,14 +42,16 @@ function renderAspect(aspect: AspectDefinition, answers: AspectAnswers): string 
 
 export function generateAgentsMd(
   projectName: string,
+  repoKey: RepoKey,
+  repoTitle: string,
   answersByAspect: Record<string, AspectAnswers>
 ): string {
-  const sections = aspects
+  const sections = aspectsForRepo(repoKey)
     .map((aspect) => renderAspect(aspect, answersByAspect[aspect.key] ?? {}))
     .filter((s): s is string => s !== null);
 
   const header = [
-    `# AGENTS.md — ${projectName}`,
+    `# AGENTS.md — ${projectName} (${repoTitle})`,
     "",
     "This file was generated to guard-rail AI coding agents (and human contributors) working in this repository. It records the stack, conventions, and patterns this project has standardized on. Follow these choices unless a change is deliberately proposed and this file is updated to match.",
   ].join("\n");

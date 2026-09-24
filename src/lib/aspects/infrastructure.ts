@@ -5,6 +5,7 @@ export const infrastructure: AspectDefinition = {
   title: "Infrastructure",
   icon: "🏗️",
   tagline: "Containerization, orchestration, IaC, and environment strategy.",
+  scope: ["infra"],
   cards: [
     {
       id: "runtime",

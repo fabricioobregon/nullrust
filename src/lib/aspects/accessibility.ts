@@ -5,6 +5,7 @@ export const accessibility: AspectDefinition = {
   title: "Accessibility",
   icon: "♿",
   tagline: "Conformance target, testing tools, and required patterns.",
+  scope: ["frontend", "mobile"],
   cards: [
     {
       id: "target",

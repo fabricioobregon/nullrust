@@ -5,6 +5,7 @@ export const security: AspectDefinition = {
   title: "Security",
   icon: "🛡️",
   tagline: "Secrets, dependency hygiene, input handling, and hardening conventions.",
+  scope: "all",
   cards: [
     {
       id: "secrets",

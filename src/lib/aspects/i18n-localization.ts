@@ -5,6 +5,7 @@ export const i18nLocalization: AspectDefinition = {
   title: "Internationalization & Localization",
   icon: "🌍",
   tagline: "Translation tooling, locale strategy, and what must be localized.",
+  scope: ["frontend", "mobile"],
   cards: [
     {
       id: "tooling",

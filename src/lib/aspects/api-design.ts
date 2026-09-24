@@ -5,6 +5,7 @@ export const apiDesign: AspectDefinition = {
   title: "API Design",
   icon: "🔌",
   tagline: "API style, versioning, pagination, and error-shape conventions.",
+  scope: ["backend"],
   cards: [
     {
       id: "style",

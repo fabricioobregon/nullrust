@@ -1,9 +1,10 @@
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
-import { getAspect } from "@/lib/aspects/registry";
+import { getAspect, isAspectInRepoScope } from "@/lib/aspects/registry";
 import { getAspectAnswers } from "@/lib/preferences";
 import { saveAspect } from "@/app/actions";
 import { AspectField } from "@/lib/aspects/types";
+import { getRepo, isRepoKey } from "@/lib/repos";
 
 export const dynamic = "force-dynamic";
 
@@ -58,24 +59,29 @@ function Field({ field, value }: { field: AspectField; value: string | string[] 
 export default async function AspectPage({
   params,
 }: {
-  params: Promise<{ projectId: string; aspectKey: string }>;
+  params: Promise<{ projectId: string; repoKey: string; aspectKey: string }>;
 }) {
-  const { projectId, aspectKey } = await params;
+  const { projectId, repoKey, aspectKey } = await params;
+  if (!isRepoKey(repoKey)) notFound();
 
   const [project, aspect] = await Promise.all([
     db.project.findUnique({ where: { id: projectId } }),
     Promise.resolve(getAspect(aspectKey)),
   ]);
-  if (!project || !aspect) notFound();
+  if (!project || !aspect || !isAspectInRepoScope(aspect, repoKey)) notFound();
 
-  const answers = await getAspectAnswers(projectId, aspectKey);
-  const action = saveAspect.bind(null, projectId, aspectKey);
+  const repo = getRepo(repoKey)!;
+  const answers = await getAspectAnswers(projectId, repoKey, aspectKey);
+  const action = saveAspect.bind(null, projectId, repoKey, aspectKey);
 
   return (
-    <div className="mx-auto max-w-3xl px-6 py-12 space-y-8">
+    <div className="mx-auto max-w-3xl space-y-8">
       <div>
-        <a href={`/projects/${projectId}`} className="text-sm text-slate-500 hover:text-slate-700">
-          &larr; {project.name}
+        <a
+          href={`/projects/${projectId}/repos/${repoKey}`}
+          className="text-sm text-slate-500 hover:text-slate-700"
+        >
+          &larr; {project.name} / {repo.title}
         </a>
         <h1 className="mt-1 flex items-center gap-2 text-2xl font-semibold">
           <span>{aspect.icon}</span> {aspect.title}

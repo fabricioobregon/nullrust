@@ -5,6 +5,7 @@ export const testing: AspectDefinition = {
   title: "Testing",
   icon: "🧪",
   tagline: "Test frameworks, coverage bar, and test-writing conventions.",
+  scope: "all",
   cards: [
     {
       id: "frameworks",

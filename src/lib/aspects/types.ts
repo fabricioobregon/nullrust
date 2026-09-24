@@ -1,3 +1,5 @@
+import { RepoKey } from "@/lib/repos";
+
 export type FieldOption = {
   value: string;
   label: string;
@@ -28,6 +30,8 @@ export type AspectDefinition = {
   title: string;
   icon: string;
   tagline: string;
+  /** Which repo(s) this aspect applies to. "all" shows it under every repo tab. */
+  scope: RepoKey[] | "all";
   cards: AspectCard[];
 };
 

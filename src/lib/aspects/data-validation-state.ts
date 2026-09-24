@@ -5,6 +5,7 @@ export const dataValidationState: AspectDefinition = {
   title: "Data Validation & State",
   icon: "✅",
   tagline: "Schema validation library, frontend state management, and forms.",
+  scope: ["backend", "frontend", "mobile"],
   cards: [
     {
       id: "validation",

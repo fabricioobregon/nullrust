@@ -5,6 +5,7 @@ export const programmingLanguage: AspectDefinition = {
   title: "Programming Language",
   icon: "💻",
   tagline: "Primary language, type safety, and style conventions.",
+  scope: "all",
   cards: [
     {
       id: "language",

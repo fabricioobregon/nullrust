@@ -5,6 +5,7 @@ export const framework: AspectDefinition = {
   title: "Framework",
   icon: "🧩",
   tagline: "Application framework and structural conventions.",
+  scope: ["backend", "frontend", "mobile"],
   cards: [
     {
       id: "framework",

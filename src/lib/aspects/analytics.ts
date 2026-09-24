@@ -5,6 +5,7 @@ export const analytics: AspectDefinition = {
   title: "Analytics",
   icon: "📈",
   tagline: "Product analytics tooling, event conventions, and tracking patterns.",
+  scope: ["backend", "frontend", "mobile"],
   cards: [
     {
       id: "tooling",

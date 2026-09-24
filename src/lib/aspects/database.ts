@@ -5,6 +5,7 @@ export const database: AspectDefinition = {
   title: "Database",
   icon: "🗄️",
   tagline: "Engine, ORM, naming, keys, and indexing conventions.",
+  scope: ["backend"],
   cards: [
     {
       id: "engine",

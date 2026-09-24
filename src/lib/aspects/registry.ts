@@ -1,4 +1,5 @@
 import { AspectAnswers, AspectDefinition } from "./types";
+import { RepoKey } from "@/lib/repos";
 import { programmingLanguage } from "./programming-language";
 import { framework } from "./framework";
 import { database } from "./database";
@@ -54,6 +55,14 @@ export const aspects: AspectDefinition[] = [
 
 export function getAspect(key: string): AspectDefinition | undefined {
   return aspects.find((a) => a.key === key);
+}
+
+export function aspectsForRepo(repoKey: RepoKey): AspectDefinition[] {
+  return aspects.filter((a) => a.scope === "all" || a.scope.includes(repoKey));
+}
+
+export function isAspectInRepoScope(aspect: AspectDefinition, repoKey: RepoKey): boolean {
+  return aspect.scope === "all" || aspect.scope.includes(repoKey);
 }
 
 export function fieldCount(aspect: AspectDefinition): number {

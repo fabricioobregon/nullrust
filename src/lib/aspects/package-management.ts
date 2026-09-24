@@ -5,6 +5,7 @@ export const packageManagement: AspectDefinition = {
   title: "Package Management",
   icon: "📦",
   tagline: "Package manager, monorepo tooling, and dependency conventions.",
+  scope: "all",
   cards: [
     {
       id: "package-manager",

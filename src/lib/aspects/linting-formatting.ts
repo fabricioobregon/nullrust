@@ -5,6 +5,7 @@ export const lintingFormatting: AspectDefinition = {
   title: "Linting & Formatting",
   icon: "🧹",
   tagline: "Code style enforcement, pre-commit hooks, and commit conventions.",
+  scope: "all",
   cards: [
     {
       id: "tooling",

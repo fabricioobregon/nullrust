@@ -5,6 +5,7 @@ export const observability: AspectDefinition = {
   title: "Observability",
   icon: "📡",
   tagline: "Logging, metrics, tracing, error tracking, and alerting.",
+  scope: "all",
   cards: [
     {
       id: "logging",

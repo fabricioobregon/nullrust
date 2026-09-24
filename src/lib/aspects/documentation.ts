@@ -5,6 +5,7 @@ export const documentation: AspectDefinition = {
   title: "Documentation",
   icon: "📚",
   tagline: "README, architecture decisions, API docs, and comment policy.",
+  scope: "all",
   cards: [
     {
       id: "repo-docs",

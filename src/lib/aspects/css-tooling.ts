@@ -5,6 +5,7 @@ export const cssTooling: AspectDefinition = {
   title: "CSS Tooling",
   icon: "🎨",
   tagline: "Styling approach, design tokens, and responsive/theming conventions.",
+  scope: ["frontend"],
   cards: [
     {
       id: "approach",

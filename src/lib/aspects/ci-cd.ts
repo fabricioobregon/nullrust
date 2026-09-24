@@ -5,6 +5,7 @@ export const ciCd: AspectDefinition = {
   title: "CI/CD",
   icon: "🚀",
   tagline: "Pipeline provider, required checks, and deployment strategy.",
+  scope: "all",
   cards: [
     {
       id: "provider",

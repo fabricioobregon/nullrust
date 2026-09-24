@@ -5,6 +5,7 @@ export const messagingBackgroundJobs: AspectDefinition = {
   title: "Messaging & Background Jobs",
   icon: "📨",
   tagline: "Queues, brokers, job runners, and retry/idempotency conventions.",
+  scope: ["backend", "infra"],
   cards: [
     {
       id: "messaging",

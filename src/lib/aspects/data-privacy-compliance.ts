@@ -5,6 +5,7 @@ export const dataPrivacyCompliance: AspectDefinition = {
   title: "Data Privacy & Compliance",
   icon: "🔏",
   tagline: "Applicable regulations, PII handling, retention, and consent.",
+  scope: "all",
   cards: [
     {
       id: "regulations",

@@ -5,6 +5,7 @@ export const featureFlags: AspectDefinition = {
   title: "Feature Flags",
   icon: "🚩",
   tagline: "Flag platform, rollout strategy, and flag lifecycle.",
+  scope: "all",
   cards: [
     {
       id: "platform",

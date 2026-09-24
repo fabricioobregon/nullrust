@@ -5,6 +5,7 @@ export const gitWorkflow: AspectDefinition = {
   title: "Git Workflow",
   icon: "🌿",
   tagline: "Branching model, review requirements, and merge strategy.",
+  scope: "all",
   cards: [
     {
       id: "branching",

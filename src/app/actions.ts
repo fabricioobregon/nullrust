@@ -4,8 +4,9 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { saveAspectAnswers } from "@/lib/preferences";
-import { getAspect } from "@/lib/aspects/registry";
+import { getAspect, isAspectInRepoScope } from "@/lib/aspects/registry";
 import { AspectAnswers } from "@/lib/aspects/types";
+import { RepoKey, isRepoKey } from "@/lib/repos";
 
 export async function createProject(formData: FormData) {
   const name = String(formData.get("name") ?? "").trim();
@@ -23,11 +24,17 @@ export async function deleteProject(projectId: string) {
 
 export async function saveAspect(
   projectId: string,
+  repoKey: RepoKey,
   aspectKey: string,
   formData: FormData
 ) {
+  if (!isRepoKey(repoKey)) throw new Error(`Unknown repo: ${repoKey}`);
+
   const aspect = getAspect(aspectKey);
   if (!aspect) throw new Error(`Unknown aspect: ${aspectKey}`);
+  if (!isAspectInRepoScope(aspect, repoKey)) {
+    throw new Error(`Aspect "${aspectKey}" is not in scope for repo "${repoKey}"`);
+  }
 
   const answers: AspectAnswers = {};
   for (const card of aspect.cards) {
@@ -42,8 +49,8 @@ export async function saveAspect(
     }
   }
 
-  await saveAspectAnswers(projectId, aspectKey, answers);
-  revalidatePath(`/projects/${projectId}`);
-  revalidatePath(`/projects/${projectId}/aspects/${aspectKey}`);
-  redirect(`/projects/${projectId}?saved=${aspectKey}`);
+  await saveAspectAnswers(projectId, repoKey, aspectKey, answers);
+  revalidatePath(`/projects/${projectId}/repos/${repoKey}`);
+  revalidatePath(`/projects/${projectId}/repos/${repoKey}/aspects/${aspectKey}`);
+  redirect(`/projects/${projectId}/repos/${repoKey}?saved=${aspectKey}`);
 }

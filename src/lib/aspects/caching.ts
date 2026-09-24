@@ -5,6 +5,7 @@ export const caching: AspectDefinition = {
   title: "Caching",
   icon: "⚡",
   tagline: "Caching layers, invalidation strategy, and session storage.",
+  scope: ["backend", "infra"],
   cards: [
     {
       id: "layers",

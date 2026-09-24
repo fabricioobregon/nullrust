@@ -5,6 +5,7 @@ export const auth: AspectDefinition = {
   title: "Authentication & Authorization",
   icon: "🔐",
   tagline: "Identity provider, session strategy, and access-control model.",
+  scope: "all",
   cards: [
     {
       id: "authentication",

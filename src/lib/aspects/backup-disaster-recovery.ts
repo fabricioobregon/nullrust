@@ -5,6 +5,7 @@ export const backupDisasterRecovery: AspectDefinition = {
   title: "Backup & Disaster Recovery",
   icon: "💾",
   tagline: "Backup cadence, recovery targets, and failover strategy.",
+  scope: ["backend", "infra"],
   cards: [
     {
       id: "backups",
