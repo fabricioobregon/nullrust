@@ -16,12 +16,36 @@ export const lintingFormatting: AspectDefinition = {
           label: "Linter",
           type: "single",
           options: [
-            { value: "eslint", label: "ESLint" },
-            { value: "biome", label: "Biome" },
-            { value: "ruff", label: "Ruff" },
-            { value: "rubocop", label: "RuboCop" },
-            { value: "golangci-lint", label: "golangci-lint" },
-            { value: "checkstyle", label: "Checkstyle" },
+            {
+              value: "eslint",
+              label: "ESLint",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["typescript", "javascript"] }],
+            },
+            {
+              value: "biome",
+              label: "Biome",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["typescript", "javascript"] }],
+            },
+            {
+              value: "ruff",
+              label: "Ruff",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["python"] }],
+            },
+            {
+              value: "rubocop",
+              label: "RuboCop",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["ruby"] }],
+            },
+            {
+              value: "golangci-lint",
+              label: "golangci-lint",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["go"] }],
+            },
+            {
+              value: "checkstyle",
+              label: "Checkstyle",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["java", "kotlin"] }],
+            },
           ],
         },
         {
@@ -29,11 +53,31 @@ export const lintingFormatting: AspectDefinition = {
           label: "Formatter",
           type: "single",
           options: [
-            { value: "prettier", label: "Prettier" },
-            { value: "biome-format", label: "Biome (formatter)" },
-            { value: "black", label: "Black" },
-            { value: "gofmt", label: "gofmt" },
-            { value: "rustfmt", label: "rustfmt" },
+            {
+              value: "prettier",
+              label: "Prettier",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["typescript", "javascript"] }],
+            },
+            {
+              value: "biome-format",
+              label: "Biome (formatter)",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["typescript", "javascript"] }],
+            },
+            {
+              value: "black",
+              label: "Black",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["python"] }],
+            },
+            {
+              value: "gofmt",
+              label: "gofmt",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["go"] }],
+            },
+            {
+              value: "rustfmt",
+              label: "rustfmt",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["rust"] }],
+            },
           ],
         },
       ],

@@ -1,9 +1,24 @@
 import { RepoKey } from "@/lib/repos";
 
+/**
+ * An option is only offered when the referenced field (elsewhere in the same
+ * aspect, or in a different aspect, e.g. "programming-language.language")
+ * currently holds one of `values`. See compatibility.ts for how these
+ * combine across multiple rules and cascade through multiple upstream
+ * fields (e.g. an ORM option gated on both a language AND a framework).
+ */
+export type CompatibilityRule = {
+  aspectKey: string;
+  fieldId: string;
+  values: string[];
+};
+
 export type FieldOption = {
   value: string;
   label: string;
   description?: string;
+  /** ALL rules must pass (AND) for this option to be shown. */
+  compatibleWhen?: CompatibilityRule[];
 };
 
 export type AspectField = {

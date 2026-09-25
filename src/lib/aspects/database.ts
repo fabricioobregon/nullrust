@@ -39,15 +39,56 @@ export const database: AspectDefinition = {
           label: "ORM or query builder",
           type: "single",
           options: [
-            { value: "prisma", label: "Prisma" },
-            { value: "drizzle", label: "Drizzle ORM" },
-            { value: "typeorm", label: "TypeORM" },
-            { value: "sequelize", label: "Sequelize" },
-            { value: "knex", label: "Knex (query builder)" },
-            { value: "sqlalchemy", label: "SQLAlchemy" },
-            { value: "django-orm", label: "Django ORM" },
-            { value: "activerecord", label: "ActiveRecord" },
-            { value: "mongoose", label: "Mongoose" },
+            {
+              value: "prisma",
+              label: "Prisma",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["typescript", "javascript"] }],
+            },
+            {
+              value: "drizzle",
+              label: "Drizzle ORM",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["typescript", "javascript"] }],
+            },
+            {
+              value: "typeorm",
+              label: "TypeORM",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["typescript", "javascript"] }],
+            },
+            {
+              value: "sequelize",
+              label: "Sequelize",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["typescript", "javascript"] }],
+            },
+            {
+              value: "knex",
+              label: "Knex (query builder)",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["typescript", "javascript"] }],
+            },
+            {
+              value: "sqlalchemy",
+              label: "SQLAlchemy",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["python"] }],
+            },
+            {
+              value: "django-orm",
+              label: "Django ORM",
+              // Two-level cascade: not just "language is Python" — the framework
+              // itself must be Django, otherwise Django ORM makes no sense.
+              compatibleWhen: [
+                { aspectKey: "programming-language", fieldId: "language", values: ["python"] },
+                { aspectKey: "framework", fieldId: "framework", values: ["django"] },
+              ],
+            },
+            {
+              value: "activerecord",
+              label: "ActiveRecord",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["ruby"] }],
+            },
+            {
+              value: "mongoose",
+              label: "Mongoose",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["typescript", "javascript"] }],
+            },
             { value: "raw-sql", label: "Raw SQL / hand-written queries" },
           ],
         },

@@ -25,19 +25,22 @@ import { analytics } from "./analytics";
 import { backupDisasterRecovery } from "./backup-disaster-recovery";
 import { i18nLocalization } from "./i18n-localization";
 
-// Add one entry per new aspect page here. Order controls display order.
+// Order controls display order. The first few are deliberately sequenced:
+// they drive compatibleWhen filtering on later aspects' options (see
+// compatibility.ts), so Language/Framework/Database/Testing/Linting come
+// first even though nothing here *enforces* answering them in order.
 export const aspects: AspectDefinition[] = [
   programmingLanguage,
   framework,
   database,
+  testing,
+  lintingFormatting,
   cssTooling,
   ciCd,
-  testing,
   observability,
   apiDesign,
   auth,
   security,
-  lintingFormatting,
   gitWorkflow,
   infrastructure,
   caching,

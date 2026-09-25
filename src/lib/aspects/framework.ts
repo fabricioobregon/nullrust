@@ -16,17 +16,61 @@ export const framework: AspectDefinition = {
           label: "Framework",
           type: "single",
           options: [
-            { value: "nextjs", label: "Next.js" },
-            { value: "remix", label: "Remix / React Router" },
-            { value: "express", label: "Express" },
-            { value: "nestjs", label: "NestJS" },
-            { value: "fastify", label: "Fastify" },
-            { value: "django", label: "Django" },
-            { value: "fastapi", label: "FastAPI" },
-            { value: "rails", label: "Ruby on Rails" },
-            { value: "spring-boot", label: "Spring Boot" },
-            { value: "aspnet-core", label: "ASP.NET Core" },
-            { value: "laravel", label: "Laravel" },
+            {
+              value: "nextjs",
+              label: "Next.js",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["typescript", "javascript"] }],
+            },
+            {
+              value: "remix",
+              label: "Remix / React Router",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["typescript", "javascript"] }],
+            },
+            {
+              value: "express",
+              label: "Express",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["typescript", "javascript"] }],
+            },
+            {
+              value: "nestjs",
+              label: "NestJS",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["typescript", "javascript"] }],
+            },
+            {
+              value: "fastify",
+              label: "Fastify",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["typescript", "javascript"] }],
+            },
+            {
+              value: "django",
+              label: "Django",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["python"] }],
+            },
+            {
+              value: "fastapi",
+              label: "FastAPI",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["python"] }],
+            },
+            {
+              value: "rails",
+              label: "Ruby on Rails",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["ruby"] }],
+            },
+            {
+              value: "spring-boot",
+              label: "Spring Boot",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["java", "kotlin"] }],
+            },
+            {
+              value: "aspnet-core",
+              label: "ASP.NET Core",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["csharp"] }],
+            },
+            {
+              value: "laravel",
+              label: "Laravel",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["php"] }],
+            },
           ],
         },
         {

@@ -1,14 +1,23 @@
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { getAspect, isAspectInRepoScope } from "@/lib/aspects/registry";
-import { getAspectAnswers } from "@/lib/preferences";
+import { getRepoAnswers } from "@/lib/preferences";
 import { saveAspect } from "@/app/actions";
-import { AspectField } from "@/lib/aspects/types";
+import { AspectField, FieldOption } from "@/lib/aspects/types";
+import { compatibleOptions, wasNarrowed, RepoAnswers } from "@/lib/aspects/compatibility";
 import { getRepo, isRepoKey } from "@/lib/repos";
 
 export const dynamic = "force-dynamic";
 
-function Field({ field, value }: { field: AspectField; value: string | string[] | undefined }) {
+function Field({
+  field,
+  value,
+  repoAnswers,
+}: {
+  field: AspectField;
+  value: string | string[] | undefined;
+  repoAnswers: RepoAnswers;
+}) {
   if (field.type === "text") {
     return (
       <div>
@@ -30,12 +39,27 @@ function Field({ field, value }: { field: AspectField; value: string | string[] 
   const selected = new Set(Array.isArray(value) ? value : value ? [value] : []);
   const inputType = field.type === "multi" ? "checkbox" : "radio";
 
+  // Narrow to compatible options, but never drop an already-selected value from
+  // view just because an upstream answer changed after the fact — it stays
+  // visible (and still saved) until the user picks something else.
+  const filtered = compatibleOptions(field, repoAnswers);
+  const stale = (field.options ?? []).filter(
+    (o) => selected.has(o.value) && !filtered.some((f) => f.value === o.value)
+  );
+  const displayOptions: FieldOption[] = [...filtered, ...stale];
+  const narrowed = wasNarrowed(field, repoAnswers);
+
   return (
     <fieldset>
       <legend className="text-sm font-medium text-slate-700">{field.label}</legend>
       {field.description && <p className="mt-0.5 text-sm text-slate-500">{field.description}</p>}
+      {narrowed && (
+        <p className="mt-0.5 text-xs text-indigo-600">
+          Narrowed based on this repo&rsquo;s Language/Framework selection.
+        </p>
+      )}
       <div className="mt-2 flex flex-wrap gap-2">
-        {field.options?.map((opt) => (
+        {displayOptions.map((opt) => (
           <label
             key={opt.value}
             className="flex cursor-pointer items-center gap-2 rounded-md border border-slate-300 px-3 py-1.5 text-sm has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-50 has-[:checked]:text-indigo-700"
@@ -71,7 +95,8 @@ export default async function AspectPage({
   if (!project || !aspect || !isAspectInRepoScope(aspect, repoKey)) notFound();
 
   const repo = getRepo(repoKey)!;
-  const answers = await getAspectAnswers(projectId, repoKey, aspectKey);
+  const repoAnswers = await getRepoAnswers(projectId, repoKey);
+  const answers = repoAnswers[aspectKey] ?? {};
   const action = saveAspect.bind(null, projectId, repoKey, aspectKey);
 
   return (
@@ -97,7 +122,7 @@ export default async function AspectPage({
               {card.description && <p className="mt-0.5 text-sm text-slate-500">{card.description}</p>}
             </div>
             {card.fields.map((field) => (
-              <Field key={field.id} field={field} value={answers[field.id]} />
+              <Field key={field.id} field={field} value={answers[field.id]} repoAnswers={repoAnswers} />
             ))}
           </div>
         ))}

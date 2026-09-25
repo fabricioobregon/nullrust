@@ -16,13 +16,41 @@ export const testing: AspectDefinition = {
           label: "Unit test framework",
           type: "single",
           options: [
-            { value: "vitest", label: "Vitest" },
-            { value: "jest", label: "Jest" },
-            { value: "pytest", label: "pytest" },
-            { value: "go-test", label: "go test" },
-            { value: "junit", label: "JUnit" },
-            { value: "rspec", label: "RSpec" },
-            { value: "xunit", label: "xUnit / NUnit" },
+            {
+              value: "vitest",
+              label: "Vitest",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["typescript", "javascript"] }],
+            },
+            {
+              value: "jest",
+              label: "Jest",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["typescript", "javascript"] }],
+            },
+            {
+              value: "pytest",
+              label: "pytest",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["python"] }],
+            },
+            {
+              value: "go-test",
+              label: "go test",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["go"] }],
+            },
+            {
+              value: "junit",
+              label: "JUnit",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["java", "kotlin"] }],
+            },
+            {
+              value: "rspec",
+              label: "RSpec",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["ruby"] }],
+            },
+            {
+              value: "xunit",
+              label: "xUnit / NUnit",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["csharp"] }],
+            },
           ],
         },
         {
