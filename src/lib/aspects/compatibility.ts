@@ -1,5 +1,6 @@
 import { AspectAnswers, AspectField, FieldOption } from "./types";
 import { getAspect } from "./registry";
+import { RepoKey } from "@/lib/repos";
 
 /** All aspects' saved answers for one repo, keyed by aspect key. */
 export type RepoAnswers = Record<string, AspectAnswers>;
@@ -35,42 +36,54 @@ function ruleAllows(rule: FieldOption["compatibleWhen"], answers: RepoAnswers): 
 }
 
 /**
- * Filters a field's options against everything answered so far in the repo.
+ * Filters a field's options for one repo tab and everything answered so far
+ * in that repo. Two layers, applied in order:
  *
- * Two safety nets keep this from ever being confusingly over-narrow:
- * - If none of the upstream fields this field's rules reference have been
- *   answered yet, nothing is filtered — there's no basis to narrow on, so
- *   every option stays visible until the user starts the chain (e.g. picks
- *   a Language). This also means cascades naturally deepen: once Language
- *   is set, Framework narrows; once Framework is also set, options that
- *   require *both* (like an ORM tied to one specific framework) can appear.
- * - If upstream answers exist but filtering would still leave zero options
- *   (a language/tool combination this registry has no rule for yet), all
- *   options are shown rather than presenting a dead end.
+ * 1. Hard repo filter (option.repos) — a mobile-only framework never shows
+ *    on the Frontend tab, full stop. This layer is never relaxed by a
+ *    fallback; it's a structural boundary, not a progressive narrowing.
+ * 2. Soft cross-field filter (option.compatibleWhen) — e.g. Language also
+ *    narrows Framework. This one has two safety nets so it can't dead-end:
+ *    if none of its referenced upstream fields have been answered yet,
+ *    nothing is filtered (there's no basis to narrow on); if upstream
+ *    answers exist but filtering would leave zero options (a language/tool
+ *    combination this registry has no rule for yet), it falls back to
+ *    whatever step 1 already allowed for this repo — never back to options
+ *    step 1 excluded.
  */
-export function compatibleOptions(field: AspectField, answers: RepoAnswers): FieldOption[] {
+export function compatibleOptions(
+  field: AspectField,
+  answers: RepoAnswers,
+  repoKey: RepoKey
+): FieldOption[] {
   if (!field.options) return [];
 
+  const repoFiltered = field.options.filter((opt) => !opt.repos || opt.repos.includes(repoKey));
+  const base = repoFiltered.length > 0 ? repoFiltered : field.options;
+
   const anyUpstreamAnswered = referencedFields(field).some((r) => isAnswered(answers, r.aspectKey, r.fieldId));
-  if (!anyUpstreamAnswered) return field.options;
+  if (!anyUpstreamAnswered) return base;
 
-  const filtered = field.options.filter((opt) => ruleAllows(opt.compatibleWhen, answers));
-  return filtered.length > 0 ? filtered : field.options;
-}
-
-/** True if narrowing actually hid at least one option (for a UI hint). */
-export function wasNarrowed(field: AspectField, answers: RepoAnswers): boolean {
-  if (!field.options) return false;
-  return compatibleOptions(field, answers).length < field.options.length;
+  const filtered = base.filter((opt) => ruleAllows(opt.compatibleWhen, answers));
+  return filtered.length > 0 ? filtered : base;
 }
 
 /**
  * Human-readable description of what's actually driving the narrowing, e.g.
- * ["Language = Python", "Framework = Django"] — so the UI can say exactly
- * why options disappeared instead of a generic "stuff changed" message.
+ * ["this repo (Mobile)", "Language = Dart"] — so the UI can say exactly why
+ * options disappeared instead of a generic "stuff changed" message.
  */
-export function narrowingReasons(field: AspectField, answers: RepoAnswers): string[] {
+export function narrowingReasons(
+  field: AspectField,
+  answers: RepoAnswers,
+  repoKey: RepoKey,
+  repoTitle: string
+): string[] {
   const reasons: string[] = [];
+
+  const repoFilteredCount = (field.options ?? []).filter((opt) => !opt.repos || opt.repos.includes(repoKey)).length;
+  if (repoFilteredCount < (field.options?.length ?? 0)) reasons.push(`this repo (${repoTitle})`);
+
   for (const { aspectKey, fieldId } of referencedFields(field)) {
     if (!isAnswered(answers, aspectKey, fieldId)) continue;
     const upstreamAspect = getAspect(aspectKey);

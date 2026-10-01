@@ -5,7 +5,7 @@ import { getRepoAnswers } from "@/lib/preferences";
 import { saveAspect } from "@/app/actions";
 import { AspectField, FieldOption } from "@/lib/aspects/types";
 import { compatibleOptions, narrowingReasons, RepoAnswers } from "@/lib/aspects/compatibility";
-import { getRepo, isRepoKey } from "@/lib/repos";
+import { RepoKey, getRepo, isRepoKey } from "@/lib/repos";
 
 export const dynamic = "force-dynamic";
 
@@ -13,10 +13,14 @@ function Field({
   field,
   value,
   repoAnswers,
+  repoKey,
+  repoTitle,
 }: {
   field: AspectField;
   value: string | string[] | undefined;
   repoAnswers: RepoAnswers;
+  repoKey: RepoKey;
+  repoTitle: string;
 }) {
   if (field.type === "text") {
     return (
@@ -42,12 +46,15 @@ function Field({
   // Narrow to compatible options, but never drop an already-selected value from
   // view just because an upstream answer changed after the fact — it stays
   // visible (and still saved) until the user picks something else.
-  const filtered = compatibleOptions(field, repoAnswers);
+  const filtered = compatibleOptions(field, repoAnswers, repoKey);
   const stale = (field.options ?? []).filter(
     (o) => selected.has(o.value) && !filtered.some((f) => f.value === o.value)
   );
   const displayOptions: FieldOption[] = [...filtered, ...stale];
-  const reasons = filtered.length < (field.options?.length ?? 0) ? narrowingReasons(field, repoAnswers) : [];
+  const reasons =
+    filtered.length < (field.options?.length ?? 0)
+      ? narrowingReasons(field, repoAnswers, repoKey, repoTitle)
+      : [];
 
   return (
     <fieldset>
@@ -120,7 +127,14 @@ export default async function AspectPage({
               {card.description && <p className="mt-0.5 text-sm text-slate-500">{card.description}</p>}
             </div>
             {card.fields.map((field) => (
-              <Field key={field.id} field={field} value={answers[field.id]} repoAnswers={repoAnswers} />
+              <Field
+                key={field.id}
+                field={field}
+                value={answers[field.id]}
+                repoAnswers={repoAnswers}
+                repoKey={repoKey}
+                repoTitle={repo.title}
+              />
             ))}
           </div>
         ))}

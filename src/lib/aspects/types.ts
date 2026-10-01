@@ -19,6 +19,15 @@ export type FieldOption = {
   description?: string;
   /** ALL rules must pass (AND) for this option to be shown. */
   compatibleWhen?: CompatibilityRule[];
+  /**
+   * Restricts this option to specific repo tabs (e.g. a mobile-native
+   * framework shouldn't appear on the Frontend tab even if the language
+   * matches). Omit to allow it on every repo the aspect itself is scoped to.
+   * This is a hard structural boundary, not a progressive narrowing like
+   * compatibleWhen — it's enforced unconditionally and never relaxed by the
+   * "show everything" fallback that compatibleWhen uses for rule gaps.
+   */
+  repos?: RepoKey[];
 };
 
 export type AspectField = {
