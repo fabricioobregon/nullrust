@@ -10,7 +10,8 @@
     "start": "next start",
     "lint": "eslint",
     "postinstall": "prisma generate",
-    "db:reset": "prisma migrate reset"
+    "db:reset": "prisma migrate reset",
+    "wasm:build": "asc assembly/cloud3d.ts --outFile public/wasm/cloud3d.wasm --optimize --noAssert"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",
@@ -24,6 +25,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "assemblyscript": "^0.28.20",
     "dotenv": "^18.0.1",
     "eslint": "^9",
     "eslint-config-next": "16.3.5",
