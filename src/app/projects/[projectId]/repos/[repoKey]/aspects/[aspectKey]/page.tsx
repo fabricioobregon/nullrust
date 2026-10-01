@@ -4,7 +4,7 @@ import { getAspect, isAspectInRepoScope } from "@/lib/aspects/registry";
 import { getRepoAnswers } from "@/lib/preferences";
 import { saveAspect } from "@/app/actions";
 import { AspectField, FieldOption } from "@/lib/aspects/types";
-import { compatibleOptions, wasNarrowed, RepoAnswers } from "@/lib/aspects/compatibility";
+import { compatibleOptions, narrowingReasons, RepoAnswers } from "@/lib/aspects/compatibility";
 import { getRepo, isRepoKey } from "@/lib/repos";
 
 export const dynamic = "force-dynamic";
@@ -47,16 +47,14 @@ function Field({
     (o) => selected.has(o.value) && !filtered.some((f) => f.value === o.value)
   );
   const displayOptions: FieldOption[] = [...filtered, ...stale];
-  const narrowed = wasNarrowed(field, repoAnswers);
+  const reasons = filtered.length < (field.options?.length ?? 0) ? narrowingReasons(field, repoAnswers) : [];
 
   return (
     <fieldset>
       <legend className="text-sm font-medium text-slate-700">{field.label}</legend>
       {field.description && <p className="mt-0.5 text-sm text-slate-500">{field.description}</p>}
-      {narrowed && (
-        <p className="mt-0.5 text-xs text-indigo-600">
-          Narrowed based on this repo&rsquo;s Language/Framework selection.
-        </p>
+      {reasons.length > 0 && (
+        <p className="mt-0.5 text-xs text-indigo-600">Narrowed based on {reasons.join(", ")}.</p>
       )}
       <div className="mt-2 flex flex-wrap gap-2">
         {displayOptions.map((opt) => (

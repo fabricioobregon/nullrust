@@ -1,4 +1,5 @@
 import { AspectAnswers, AspectField, FieldOption } from "./types";
+import { getAspect } from "./registry";
 
 /** All aspects' saved answers for one repo, keyed by aspect key. */
 export type RepoAnswers = Record<string, AspectAnswers>;
@@ -6,6 +7,21 @@ export type RepoAnswers = Record<string, AspectAnswers>;
 function isAnswered(answers: RepoAnswers, aspectKey: string, fieldId: string): boolean {
   const v = answers[aspectKey]?.[fieldId];
   return v !== undefined && v !== null && !(Array.isArray(v) && v.length === 0);
+}
+
+function referencedFields(field: AspectField): Array<{ aspectKey: string; fieldId: string }> {
+  const seen = new Set<string>();
+  const out: Array<{ aspectKey: string; fieldId: string }> = [];
+  for (const opt of field.options ?? []) {
+    for (const rule of opt.compatibleWhen ?? []) {
+      const key = `${rule.aspectKey}.${rule.fieldId}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        out.push({ aspectKey: rule.aspectKey, fieldId: rule.fieldId });
+      }
+    }
+  }
+  return out;
 }
 
 function ruleAllows(rule: FieldOption["compatibleWhen"], answers: RepoAnswers): boolean {
@@ -35,16 +51,7 @@ function ruleAllows(rule: FieldOption["compatibleWhen"], answers: RepoAnswers): 
 export function compatibleOptions(field: AspectField, answers: RepoAnswers): FieldOption[] {
   if (!field.options) return [];
 
-  const referenced = new Set<string>();
-  for (const opt of field.options) {
-    for (const rule of opt.compatibleWhen ?? []) {
-      referenced.add(`${rule.aspectKey}.${rule.fieldId}`);
-    }
-  }
-  const anyUpstreamAnswered = [...referenced].some((key) => {
-    const [aspectKey, fieldId] = key.split(".");
-    return isAnswered(answers, aspectKey, fieldId);
-  });
+  const anyUpstreamAnswered = referencedFields(field).some((r) => isAnswered(answers, r.aspectKey, r.fieldId));
   if (!anyUpstreamAnswered) return field.options;
 
   const filtered = field.options.filter((opt) => ruleAllows(opt.compatibleWhen, answers));
@@ -55,4 +62,24 @@ export function compatibleOptions(field: AspectField, answers: RepoAnswers): Fie
 export function wasNarrowed(field: AspectField, answers: RepoAnswers): boolean {
   if (!field.options) return false;
   return compatibleOptions(field, answers).length < field.options.length;
+}
+
+/**
+ * Human-readable description of what's actually driving the narrowing, e.g.
+ * ["Language = Python", "Framework = Django"] — so the UI can say exactly
+ * why options disappeared instead of a generic "stuff changed" message.
+ */
+export function narrowingReasons(field: AspectField, answers: RepoAnswers): string[] {
+  const reasons: string[] = [];
+  for (const { aspectKey, fieldId } of referencedFields(field)) {
+    if (!isAnswered(answers, aspectKey, fieldId)) continue;
+    const upstreamAspect = getAspect(aspectKey);
+    const upstreamField = upstreamAspect?.cards.flatMap((c) => c.fields).find((f) => f.id === fieldId);
+    if (!upstreamField) continue;
+    const raw = answers[aspectKey]![fieldId]!;
+    const rawValues = Array.isArray(raw) ? raw : [raw];
+    const labels = rawValues.map((v) => upstreamField.options?.find((o) => o.value === v)?.label ?? v);
+    reasons.push(`${upstreamField.label} = ${labels.join(", ")}`);
+  }
+  return reasons;
 }

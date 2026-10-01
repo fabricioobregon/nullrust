@@ -71,6 +71,76 @@ export const framework: AspectDefinition = {
               label: "Laravel",
               compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["php"] }],
             },
+            {
+              value: "gin",
+              label: "Gin",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["go"] }],
+            },
+            {
+              value: "echo",
+              label: "Echo",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["go"] }],
+            },
+            {
+              value: "fiber",
+              label: "Fiber",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["go"] }],
+            },
+            {
+              value: "actix-web",
+              label: "Actix Web",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["rust"] }],
+            },
+            {
+              value: "axum",
+              label: "Axum",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["rust"] }],
+            },
+            {
+              value: "vapor",
+              label: "Vapor",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["swift"] }],
+            },
+            {
+              value: "play-framework",
+              label: "Play Framework",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["scala"] }],
+            },
+            {
+              value: "phoenix",
+              label: "Phoenix",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["elixir"] }],
+            },
+            {
+              value: "react-native",
+              label: "React Native",
+              description: "Mobile",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["typescript", "javascript"] }],
+            },
+            {
+              value: "flutter",
+              label: "Flutter",
+              description: "Mobile",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["dart"] }],
+            },
+            {
+              value: "swiftui",
+              label: "SwiftUI",
+              description: "Mobile (iOS native)",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["swift"] }],
+            },
+            {
+              value: "jetpack-compose",
+              label: "Jetpack Compose",
+              description: "Mobile (Android native)",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["kotlin", "java"] }],
+            },
+            {
+              value: "maui",
+              label: ".NET MAUI",
+              description: "Mobile",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["csharp"] }],
+            },
           ],
         },
         {
