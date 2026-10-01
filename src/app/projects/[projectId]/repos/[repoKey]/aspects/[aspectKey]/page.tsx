@@ -6,6 +6,7 @@ import { saveAspect } from "@/app/actions";
 import { AspectField, FieldOption } from "@/lib/aspects/types";
 import { compatibleOptions, narrowingReasons, RepoAnswers } from "@/lib/aspects/compatibility";
 import { RepoKey, getRepo, isRepoKey } from "@/lib/repos";
+import { OptionCloud } from "@/components/option-cloud";
 
 export const dynamic = "force-dynamic";
 
@@ -63,24 +64,33 @@ function Field({
       {reasons.length > 0 && (
         <p className="mt-0.5 text-xs text-indigo-600">Narrowed based on {reasons.join(", ")}.</p>
       )}
-      <div className="mt-2 flex flex-wrap gap-2">
-        {displayOptions.map((opt) => (
-          <label
-            key={opt.value}
-            className="flex cursor-pointer items-center gap-2 rounded-md border border-slate-300 px-3 py-1.5 text-sm has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-50 has-[:checked]:text-indigo-700"
-            title={opt.description}
-          >
-            <input
-              type={inputType}
-              name={field.id}
-              value={opt.value}
-              defaultChecked={selected.has(opt.value)}
-              className="accent-indigo-600"
-            />
-            {opt.label}
-          </label>
-        ))}
-      </div>
+      {field.display === "cloud" ? (
+        <OptionCloud
+          options={displayOptions}
+          selected={selected}
+          fieldId={field.id}
+          inputType={inputType as "radio" | "checkbox"}
+        />
+      ) : (
+        <div className="mt-2 flex flex-wrap gap-2">
+          {displayOptions.map((opt) => (
+            <label
+              key={opt.value}
+              className="flex cursor-pointer items-center gap-2 rounded-md border border-slate-300 px-3 py-1.5 text-sm has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-50 has-[:checked]:text-indigo-700"
+              title={opt.description}
+            >
+              <input
+                type={inputType}
+                name={field.id}
+                value={opt.value}
+                defaultChecked={selected.has(opt.value)}
+                className="accent-indigo-600"
+              />
+              {opt.label}
+            </label>
+          ))}
+        </div>
+      )}
     </fieldset>
   );
 }

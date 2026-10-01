@@ -28,6 +28,8 @@ export type FieldOption = {
    * "show everything" fallback that compatibleWhen uses for rule gaps.
    */
   repos?: RepoKey[];
+  /** Relative visual size when the field's `display` is "cloud". Default "md". */
+  weight?: "xl" | "lg" | "md" | "sm";
 };
 
 export type AspectField = {
@@ -38,6 +40,13 @@ export type AspectField = {
   /** Required for "single" and "multi" field types. */
   options?: FieldOption[];
   placeholder?: string;
+  /**
+   * "cloud" renders a "single" field's options as a scattered, varied-size
+   * word cloud (hover to grow/highlight, no visible checkbox/radio) instead
+   * of the default pill row. Opt-in per field — everything else keeps the
+   * plain pill UI.
+   */
+  display?: "cloud";
 };
 
 /** One card rendered on an aspect page, grouping related fields. */
