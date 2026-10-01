@@ -69,6 +69,28 @@ export function compatibleOptions(
 }
 
 /**
+ * Strictly checks whether one specific already-saved value is still valid,
+ * with none of compatibleOptions()'s UX fallbacks (which exist so the
+ * *editor* never shows an empty picker, not to decide whether a value is
+ * actually still correct). Used to decide what to clear after a save: e.g.
+ * if Rust has no matching Testing-framework option yet, compatibleOptions()
+ * falls back to showing everything so the field isn't empty — but that must
+ * NOT be read as "pytest is still fine for Rust." This checks the option's
+ * own rule directly, including the hard per-repo restriction.
+ */
+export function isValueCompatible(
+  field: AspectField,
+  value: string,
+  answers: RepoAnswers,
+  repoKey: RepoKey
+): boolean {
+  const opt = field.options?.find((o) => o.value === value);
+  if (!opt) return false;
+  if (opt.repos && !opt.repos.includes(repoKey)) return false;
+  return ruleAllows(opt.compatibleWhen, answers);
+}
+
+/**
  * Human-readable description of what's actually driving the narrowing, e.g.
  * ["this repo (Mobile)", "Language = Dart"] — so the UI can say exactly why
  * options disappeared instead of a generic "stuff changed" message.

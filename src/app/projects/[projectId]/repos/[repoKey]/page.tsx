@@ -11,10 +11,10 @@ export default async function RepoAspectsPage({
   searchParams,
 }: {
   params: Promise<{ projectId: string; repoKey: string }>;
-  searchParams: Promise<{ saved?: string }>;
+  searchParams: Promise<{ saved?: string; cleared?: string }>;
 }) {
   const { projectId, repoKey } = await params;
-  const { saved } = await searchParams;
+  const { saved, cleared } = await searchParams;
   if (!isRepoKey(repoKey)) notFound();
 
   const project = await db.project.findUnique({ where: { id: projectId } });
@@ -39,6 +39,19 @@ export default async function RepoAspectsPage({
       {saved && (
         <div className="rounded-md border border-emerald-300 bg-emerald-50 px-4 py-2 text-emerald-800">
           Saved &ldquo;{aspects.find((a) => a.key === saved)?.title ?? saved}&rdquo;.
+        </div>
+      )}
+
+      {cleared && (
+        <div className="rounded-md border border-amber-300 bg-amber-50 px-4 py-2 text-amber-900">
+          <p className="font-medium">
+            Cleared selections that no longer match your new answer:
+          </p>
+          <ul className="mt-1 list-inside list-disc text-sm">
+            {cleared.split("; ").map((line) => (
+              <li key={line}>{line}</li>
+            ))}
+          </ul>
         </div>
       )}
 

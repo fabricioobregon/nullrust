@@ -30,6 +30,15 @@ export type FieldOption = {
   repos?: RepoKey[];
   /** Relative visual size when the field's `display` is "cloud". Default "md". */
   weight?: "xl" | "lg" | "md" | "sm";
+  /**
+   * Arbitrary category label for `display: "cloud"` fields — options
+   * sharing the same string get the same background tint, assigned by
+   * order of first appearance (not hardcoded to any particular domain's
+   * category names).
+   */
+  group?: string;
+  /** Inline logo rendered instead of (plain-text) `label` in a cloud display. */
+  icon?: { path: string; hex: string };
 };
 
 export type AspectField = {
