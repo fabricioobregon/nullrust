@@ -40,6 +40,14 @@ const GROUP_BG_CLASSES = [
 // user just steadying their finger.
 const DRAG_THRESHOLD = 6;
 
+// A hold specifically gets a much more generous movement allowance before
+// it's cancelled. DRAG_THRESHOLD is tuned for telling a quick click apart
+// from the *start* of an intentional drag — but holding a position within
+// 6px for a full 3 seconds straight is an unrealistic bar for any real
+// hand/trackpad; ordinary tremor over that long would cross it well before
+// the ring ever completed, cancelling it almost immediately every time.
+const HOLD_CANCEL_DISTANCE = 24;
+
 // How long an option must be held down, uninterrupted, before it's
 // confirmed as the selection. See the charge ring in the render.
 const HOLD_DURATION_MS = 3000;
@@ -186,7 +194,15 @@ export function OptionCloud({
       if (!pointerDown) return;
       if (!dragging) {
         const dist = Math.hypot(e.clientX - startX, e.clientY - startY);
-        if (dist < DRAG_THRESHOLD) return;
+        const threshold = holdingIndex !== null ? HOLD_CANCEL_DISTANCE : DRAG_THRESHOLD;
+        if (dist < threshold) {
+          // Still within tolerance — track position so that if this *does*
+          // later cross the threshold, the resulting rotation is just the
+          // latest incremental move, not a jump from the original press point.
+          lastX = e.clientX;
+          lastY = e.clientY;
+          return;
+        }
         dragging = true;
         container!.setPointerCapture(e.pointerId);
         if (holdingIndex !== null) cancelHold(); // turned into a rotate-drag, not a hold
@@ -299,12 +315,12 @@ export function OptionCloud({
     function onItemPointerUp(e: PointerEvent) {
       if (holdingIndex !== null && holdPointerId === e.pointerId) cancelHold();
     }
-    function onItemPointerLeave(e: PointerEvent) {
-      const label = (e.target as HTMLElement).closest<HTMLElement>("[data-option-index]");
-      if (!label) return;
-      const index = Number(label.dataset.optionIndex);
-      if (holdingIndex === index) cancelHold();
-    }
+    // No pointerleave-based cancellation: it fires on every internal child
+    // boundary crossing too (e.g. icon -> caption text within the same
+    // label, from nothing more than ordinary hand tremor), which cancelled
+    // holds almost as soon as they started — the drag-distance check above
+    // (now with its own, more generous threshold while holding) is what
+    // actually decides whether the gesture turned into a rotate-drag.
     function onItemClick(e: MouseEvent) {
       // The hold is what selects; suppress the label's default instant
       // click-to-check so pointer/touch users can't shortcut past it. Native
@@ -324,7 +340,6 @@ export function OptionCloud({
     container.addEventListener("pointerdown", onItemPointerDown);
     container.addEventListener("pointerup", onItemPointerUp);
     container.addEventListener("pointercancel", onItemPointerUp);
-    container.addEventListener("pointerleave", onItemPointerLeave, true);
     container.addEventListener("click", onItemClick);
 
     return () => {
@@ -340,7 +355,6 @@ export function OptionCloud({
       container.removeEventListener("pointerdown", onItemPointerDown);
       container.removeEventListener("pointerup", onItemPointerUp);
       container.removeEventListener("pointercancel", onItemPointerUp);
-      container.removeEventListener("pointerleave", onItemPointerLeave, true);
       container.removeEventListener("click", onItemClick);
     };
     // `selected` is intentionally read only for its initial value (whether
