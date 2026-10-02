@@ -7,6 +7,7 @@ export type Cloud3dExports = {
   getOutYPtr(): number;
   getOutScalePtr(): number;
   getOutDepthPtr(): number;
+  chargeProgress(elapsedMs: number, durationMs: number): number;
 };
 
 // The compiled module (bytecode) is fetched/compiled once and cached; each

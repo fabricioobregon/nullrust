@@ -96,3 +96,19 @@ export function getOutScalePtr(): usize {
 export function getOutDepthPtr(): usize {
   return outDepth.dataStart;
 }
+
+/**
+ * Eased 0..1 progress for the "charge" confirmation ring: clicking an
+ * option doesn't select it immediately, it starts a timed ring that must
+ * complete uninterrupted before the choice is treated as confirmed. Smoothstep
+ * (ease in, ease out) reads as a more deliberate "charging up" than a linear
+ * fill would. Stateless/pure — the caller tracks elapsed time and calls this
+ * once per frame; no WASM-side timer state to get out of sync with the DOM.
+ */
+export function chargeProgress(elapsedMs: f32, durationMs: f32): f32 {
+  if (durationMs <= 0) return 1.0;
+  let t: f32 = elapsedMs / durationMs;
+  if (t > 1.0) t = 1.0;
+  if (t < 0.0) t = 0.0;
+  return t * t * (3.0 - 2.0 * t);
+}

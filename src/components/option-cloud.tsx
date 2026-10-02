@@ -39,6 +39,10 @@ const GROUP_BG_CLASSES = [
 // the container instead of the label/input, silently breaking selection.
 const DRAG_THRESHOLD = 6;
 
+// How long a click must go uninterrupted before it's treated as confirmed,
+// rather than just the most recent tap. See the "charge" ring in the render.
+const CHARGE_DURATION_MS = 3000;
+
 function clamp(v: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, v));
 }
@@ -47,6 +51,19 @@ function mapRange(v: number, inMin: number, inMax: number, outMin: number, outMa
   if (inMax === inMin) return outMin;
   const t = (v - inMin) / (inMax - inMin);
   return outMin + t * (outMax - outMin);
+}
+
+function labelVariantClasses(isSelected: boolean, enhanced: boolean, groupClass: string): string {
+  return [
+    isSelected ? "bg-indigo-50 ring-2 ring-indigo-600" : groupClass,
+    !enhanced && !isSelected && "hover:ring-2 hover:ring-indigo-400",
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
+function captionVariantClasses(isSelected: boolean, weightClass: string): string {
+  return [weightClass, isSelected ? "text-indigo-700" : "text-slate-600"].join(" ");
 }
 
 export function OptionCloud({
@@ -62,8 +79,15 @@ export function OptionCloud({
 }) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const labelRefs = useRef<Array<HTMLLabelElement | null>>([]);
+  const captionRefs = useRef<Array<HTMLSpanElement | null>>([]);
+  const ringRefs = useRef<Array<SVGRectElement | null>>([]);
   const hoveredIndex = useRef<number | null>(null);
   const [enhanced, setEnhanced] = useState(false);
+  // Mirrors `enhanced` into a ref so the effect's long-lived closures (set
+  // up once, before `enhanced` first flips true) can read its current value
+  // instead of the one captured when those closures were created.
+  const enhancedRef = useRef(enhanced);
+  enhancedRef.current = enhanced;
 
   const groupClassFor = useMemo(() => {
     const order: string[] = [];
@@ -72,7 +96,7 @@ export function OptionCloud({
     }
     const map = new Map<string, string>();
     order.forEach((g, i) => map.set(g, GROUP_BG_CLASSES[i % GROUP_BG_CLASSES.length]));
-    return (group: string | undefined) => (group ? map.get(group) : undefined);
+    return (group: string | undefined) => map.get(group ?? "") ?? "bg-slate-50";
   }, [options]);
 
   useEffect(() => {
@@ -83,7 +107,9 @@ export function OptionCloud({
     // keeps the plain flat cloud instead of a spinning one. Drag is still
     // user-initiated, not ambient, so it would be fine either way, but
     // there's no 3D engine to drag without this running, so we just skip
-    // the whole upgrade and keep the accessible 2D fallback.
+    // the whole upgrade and keep the accessible 2D fallback. The charge/
+    // confirm ring is part of that same upgrade — skipped here too, so a
+    // plain click selects immediately, same as it always has.
     if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
 
     let cancelled = false;
@@ -107,6 +133,38 @@ export function OptionCloud({
     // stops — a moving target is why clicking was unreliable in the first
     // place, and once a choice exists there's no reason to keep spinning.
     let hasSelection = selected.size > 0;
+
+    // Confirmation state: a click doesn't select immediately — it starts a
+    // timed "charge" on that item, visible as a ring drawing itself around
+    // it. Only once it completes uninterrupted does that item become the
+    // confirmed selection (styled + treated as checked going forward); a
+    // different click before then cancels it and starts charging the new
+    // one instead. This applies the same way whether nothing was selected
+    // yet or an existing choice is being changed.
+    let confirmedIndex = options.findIndex((o) => selected.has(o.value));
+    if (confirmedIndex === -1) confirmedIndex = null as unknown as number;
+    let chargingIndex: number | null = null;
+    let chargeStart = 0;
+
+    function resetRing(i: number | null) {
+      if (i === null) return;
+      const ring = ringRefs.current[i];
+      if (!ring) return;
+      ring.style.opacity = "0";
+      ring.style.strokeDashoffset = "100";
+    }
+
+    function confirmIndex(i: number) {
+      options.forEach((opt, idx) => {
+        const label = labelRefs.current[idx];
+        const caption = captionRefs.current[idx];
+        if (!label || !caption) return;
+        const isSel = idx === i;
+        label.className = buildLabelBaseClasses(idx, enhancedRef.current) + " " + labelVariantClasses(isSel, enhancedRef.current, groupClassFor(opt.group));
+        caption.className = captionVariantClasses(isSel, WEIGHT_TEXT_CLASSES[opt.weight ?? "md"]);
+      });
+      confirmedIndex = i;
+    }
 
     function sizeToContainer() {
       const rect = container!.getBoundingClientRect();
@@ -151,10 +209,18 @@ export function OptionCloud({
     function onFocusOut() {
       pausedForFocus = false;
     }
-    function onChange() {
-      // A selection was just made (or changed) within this group — freeze
-      // ambient rotation from here on, same as if it had loaded pre-selected.
+    function onChange(e: Event) {
       hasSelection = true;
+
+      if (!wasm) return; // WASM never loaded — fall back to instant native selection.
+
+      const value = (e.target as HTMLInputElement).value;
+      const index = options.findIndex((o) => o.value === value);
+      if (index === -1 || index === confirmedIndex) return;
+
+      if (chargingIndex !== null && chargingIndex !== index) resetRing(chargingIndex);
+      chargingIndex = index;
+      chargeStart = performance.now();
     }
 
     function tick(time: number) {
@@ -164,6 +230,21 @@ export function OptionCloud({
 
       if (!dragging && !pausedForFocus && !hasSelection) {
         angleY += dt * 0.00025;
+      }
+
+      if (chargingIndex !== null) {
+        const progress = wasm.chargeProgress(time - chargeStart, CHARGE_DURATION_MS);
+        const ring = ringRefs.current[chargingIndex];
+        if (ring) {
+          ring.style.opacity = "1";
+          ring.style.strokeDashoffset = String(100 * (1 - progress));
+        }
+        if (progress >= 1) {
+          const justConfirmed = chargingIndex;
+          chargingIndex = null;
+          confirmIndex(justConfirmed);
+          resetRing(justConfirmed);
+        }
       }
 
       wasm.project(angleX, angleY, radius, focalLength);
@@ -192,6 +273,7 @@ export function OptionCloud({
         instance.initSphere(options.length);
         sizeToContainer();
         wasm = instance;
+        enhancedRef.current = true;
         setEnhanced(true);
         raf = requestAnimationFrame(tick);
       } catch (err) {
@@ -220,12 +302,25 @@ export function OptionCloud({
       container.removeEventListener("change", onChange);
     };
     // `selected` is intentionally read only for its initial value (whether
-    // to start already-frozen); live changes come from the "change" listener
-    // above, not from re-running this effect, so it's excluded here on
-    // purpose — including it would tear down and rebuild the whole 3D engine
-    // (and reset rotation/drag state) on every parent re-render.
+    // to start already-frozen/already-confirmed); live changes come from the
+    // "change" listener above, not from re-running this effect, so it's
+    // excluded here on purpose — including it would tear down and rebuild
+    // the whole 3D engine (and reset rotation/drag/charge state) on every
+    // parent re-render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [options.length]);
+
+  function buildLabelBaseClasses(i: number, isEnhanced: boolean): string {
+    return [
+      "flex cursor-pointer select-none flex-col items-center gap-1 rounded-xl p-2 font-semibold transition-all duration-150 ease-out",
+      isEnhanced ? "absolute left-1/2 top-1/2 whitespace-nowrap" : "relative inline-flex",
+      !isEnhanced && ROTATIONS[i % ROTATIONS.length],
+      !isEnhanced && "hover:z-10 hover:scale-110 hover:rotate-0",
+      "has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-indigo-400 has-[:focus-visible]:ring-offset-2",
+    ]
+      .filter(Boolean)
+      .join(" ");
+  }
 
   return (
     <div
@@ -253,15 +348,11 @@ export function OptionCloud({
             onPointerLeave={() => {
               hoveredIndex.current = null;
             }}
-            className={[
-              "flex cursor-pointer select-none flex-col items-center gap-1 rounded-xl p-2 font-semibold transition-all duration-150 ease-out",
-              enhanced ? "absolute left-1/2 top-1/2 whitespace-nowrap" : "relative inline-flex",
-              !enhanced && ROTATIONS[i % ROTATIONS.length],
-              isSelected ? "bg-indigo-50 ring-2 ring-indigo-600" : (groupClassFor(opt.group) ?? "bg-slate-50"),
-              !enhanced && !isSelected && "hover:ring-2 hover:ring-indigo-400",
-              !enhanced && "hover:z-10 hover:scale-110 hover:rotate-0",
-              "has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-indigo-400 has-[:focus-visible]:ring-offset-2",
-            ].join(" ")}
+            className={
+              buildLabelBaseClasses(i, enhanced) +
+              " " +
+              labelVariantClasses(isSelected, enhanced, groupClassFor(opt.group))
+            }
           >
             <input
               type={inputType}
@@ -270,6 +361,35 @@ export function OptionCloud({
               defaultChecked={isSelected}
               className="sr-only"
             />
+            {enhanced && (
+              <svg
+                className="pointer-events-none absolute inset-0 h-full w-full overflow-visible"
+                viewBox="0 0 100 100"
+                preserveAspectRatio="none"
+                aria-hidden="true"
+              >
+                <rect
+                  ref={(el) => {
+                    ringRefs.current[i] = el;
+                    if (el) {
+                      el.style.opacity = "0";
+                      el.style.strokeDashoffset = "100";
+                    }
+                  }}
+                  x="2"
+                  y="2"
+                  width="96"
+                  height="96"
+                  rx="14"
+                  fill="none"
+                  stroke="#4f46e5"
+                  strokeWidth="4"
+                  pathLength={100}
+                  strokeDasharray={100}
+                  strokeLinecap="round"
+                />
+              </svg>
+            )}
             {opt.icon ? (
               <svg
                 viewBox="0 0 24 24"
@@ -282,7 +402,12 @@ export function OptionCloud({
                 <path d={opt.icon.path} />
               </svg>
             ) : null}
-            <span className={[WEIGHT_TEXT_CLASSES[opt.weight ?? "md"], isSelected ? "text-indigo-700" : "text-slate-600"].join(" ")}>
+            <span
+              ref={(el) => {
+                captionRefs.current[i] = el;
+              }}
+              className={captionVariantClasses(isSelected, WEIGHT_TEXT_CLASSES[opt.weight ?? "md"])}
+            >
               {opt.label}
             </span>
           </label>
