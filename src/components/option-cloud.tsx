@@ -144,10 +144,6 @@ export function OptionCloud({
     let focalLength = 260;
     let minScale = 0.6;
     let maxScale = 1.6;
-    // Once any option is (or becomes) selected, the ambient auto-rotation
-    // stops — a moving target is why clicking was unreliable in the first
-    // place, and once a choice exists there's no reason to keep spinning.
-    let hasSelection = selected.size > 0;
 
     // Hold-to-confirm: a click doesn't select an option — pressing and
     // holding it does, for HOLD_DURATION_MS straight. holdingIndex tracks
@@ -231,7 +227,6 @@ export function OptionCloud({
       // the radio group) — updating the top display here, unconditionally,
       // covers both without making keyboard users wait through a hold they
       // have no way to perform.
-      hasSelection = true;
       const input = e.target as HTMLInputElement;
       if (inputType === "radio") setConfirmedValue(input.value);
     }
@@ -241,7 +236,7 @@ export function OptionCloud({
       const dt = lastTime ? Math.min(time - lastTime, 50) : 16;
       lastTime = time;
 
-      if (!dragging && !pausedForFocus && !hasSelection) {
+      if (!dragging && !pausedForFocus) {
         angleY += dt * 0.00025;
       }
 
@@ -357,14 +352,7 @@ export function OptionCloud({
       container.removeEventListener("pointercancel", onItemPointerUp);
       container.removeEventListener("click", onItemClick);
     };
-    // `selected` is intentionally read only for its initial value (whether
-    // to start already-frozen/already-confirmed); live changes come from the
-    // "change" listener above, not from re-running this effect, so it's
-    // excluded here on purpose — including it would tear down and rebuild
-    // the whole 3D engine (and reset rotation/drag/hold state) on every
-    // parent re-render.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [options.length]);
+  }, [options.length, inputType]);
 
   function buildLabelBaseClasses(i: number, isEnhanced: boolean): string {
     return [
