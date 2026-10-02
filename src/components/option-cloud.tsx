@@ -34,14 +34,16 @@ const GROUP_BG_CLASSES = [
 ];
 
 // Distance (px) a pointer must travel before a press counts as a drag rather
-// than a click. Without this, setPointerCapture engages on every press —
-// including a plain click — which retargets the subsequent click event to
-// the container instead of the label/input, silently breaking selection.
+// than a hold/click. Without this, setPointerCapture engages on every
+// press — which retargets subsequent events to the container instead of
+// the label/input — and a hold-in-progress would get confused with the
+// user just steadying their finger.
 const DRAG_THRESHOLD = 6;
 
-// How long a click must go uninterrupted before it's treated as confirmed,
-// rather than just the most recent tap. See the "charge" ring in the render.
-const CHARGE_DURATION_MS = 3000;
+// How long an option must be held down, uninterrupted, before it's
+// confirmed as the selection. See the charge ring in the render.
+const HOLD_DURATION_MS = 3000;
+const RING_COLOR = "#059669"; // emerald-600 — matches the app's existing success/confirm color
 
 function clamp(v: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, v));
@@ -81,6 +83,7 @@ export function OptionCloud({
   const labelRefs = useRef<Array<HTMLLabelElement | null>>([]);
   const captionRefs = useRef<Array<HTMLSpanElement | null>>([]);
   const ringRefs = useRef<Array<SVGRectElement | null>>([]);
+  const inputRefs = useRef<Array<HTMLInputElement | null>>([]);
   const hoveredIndex = useRef<number | null>(null);
   const [enhanced, setEnhanced] = useState(false);
   // Mirrors `enhanced` into a ref so the effect's long-lived closures (set
@@ -104,12 +107,10 @@ export function OptionCloud({
     if (!container || options.length === 0) return;
 
     // Decorative ambient motion — an explicit reduced-motion preference
-    // keeps the plain flat cloud instead of a spinning one. Drag is still
-    // user-initiated, not ambient, so it would be fine either way, but
-    // there's no 3D engine to drag without this running, so we just skip
-    // the whole upgrade and keep the accessible 2D fallback. The charge/
-    // confirm ring is part of that same upgrade — skipped here too, so a
-    // plain click selects immediately, same as it always has.
+    // keeps the plain flat cloud instead of a spinning one, and skips the
+    // whole hold-to-confirm upgrade too: a plain click selects immediately,
+    // same as it always has. (There's also no 3D engine to drag without
+    // this running.)
     if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
 
     let cancelled = false;
@@ -134,17 +135,16 @@ export function OptionCloud({
     // place, and once a choice exists there's no reason to keep spinning.
     let hasSelection = selected.size > 0;
 
-    // Confirmation state: a click doesn't select immediately — it starts a
-    // timed "charge" on that item, visible as a ring drawing itself around
-    // it. Only once it completes uninterrupted does that item become the
-    // confirmed selection (styled + treated as checked going forward); a
-    // different click before then cancels it and starts charging the new
-    // one instead. This applies the same way whether nothing was selected
-    // yet or an existing choice is being changed.
+    // Hold-to-confirm: a click doesn't select an option — pressing and
+    // holding it does, for HOLD_DURATION_MS straight. holdingIndex tracks
+    // which item is currently being held; the ring only advances while the
+    // same pointer stays down on that item and the gesture hasn't turned
+    // into a cloud-rotate drag. Releasing early cancels it with no change.
     let confirmedIndex = options.findIndex((o) => selected.has(o.value));
     if (confirmedIndex === -1) confirmedIndex = null as unknown as number;
-    let chargingIndex: number | null = null;
-    let chargeStart = 0;
+    let holdingIndex: number | null = null;
+    let holdPointerId: number | null = null;
+    let holdStart = 0;
 
     function resetRing(i: number | null) {
       if (i === null) return;
@@ -154,13 +154,22 @@ export function OptionCloud({
       ring.style.strokeDashoffset = "100";
     }
 
+    function cancelHold() {
+      resetRing(holdingIndex);
+      holdingIndex = null;
+      holdPointerId = null;
+    }
+
     function confirmIndex(i: number) {
       options.forEach((opt, idx) => {
         const label = labelRefs.current[idx];
         const caption = captionRefs.current[idx];
         if (!label || !caption) return;
         const isSel = idx === i;
-        label.className = buildLabelBaseClasses(idx, enhancedRef.current) + " " + labelVariantClasses(isSel, enhancedRef.current, groupClassFor(opt.group));
+        label.className =
+          buildLabelBaseClasses(idx, enhancedRef.current) +
+          " " +
+          labelVariantClasses(isSel, enhancedRef.current, groupClassFor(opt.group));
         caption.className = captionVariantClasses(isSel, WEIGHT_TEXT_CLASSES[opt.weight ?? "md"]);
       });
       confirmedIndex = i;
@@ -181,8 +190,8 @@ export function OptionCloud({
       startX = lastX = e.clientX;
       startY = lastY = e.clientY;
       // Deliberately NOT capturing yet — only a confirmed drag (see
-      // onPointerMove) engages capture, so a plain click/tap reaches the
-      // label/input exactly like a normal, uncaptured click would.
+      // onPointerMove) engages capture, so a plain press/hold reaches the
+      // label/input exactly like a normal, uncaptured press would.
     }
     function onPointerMove(e: PointerEvent) {
       if (!pointerDown) return;
@@ -191,6 +200,7 @@ export function OptionCloud({
         if (dist < DRAG_THRESHOLD) return;
         dragging = true;
         container!.setPointerCapture(e.pointerId);
+        if (holdingIndex !== null) cancelHold(); // turned into a rotate-drag, not a hold
       }
       const dx = e.clientX - lastX;
       const dy = e.clientY - lastY;
@@ -202,6 +212,7 @@ export function OptionCloud({
     function onPointerUp() {
       pointerDown = false;
       dragging = false;
+      if (holdingIndex !== null) cancelHold();
     }
     function onFocusIn() {
       pausedForFocus = true;
@@ -210,17 +221,15 @@ export function OptionCloud({
       pausedForFocus = false;
     }
     function onChange(e: Event) {
+      // Fires both for our own programmatic commit (after a completed hold)
+      // and for genuine native changes (keyboard arrow-key navigation within
+      // the radio group) — applying the confirmed look here, unconditionally,
+      // covers both without making keyboard users wait through a hold they
+      // have no way to perform.
       hasSelection = true;
-
-      if (!wasm) return; // WASM never loaded — fall back to instant native selection.
-
       const value = (e.target as HTMLInputElement).value;
       const index = options.findIndex((o) => o.value === value);
-      if (index === -1 || index === confirmedIndex) return;
-
-      if (chargingIndex !== null && chargingIndex !== index) resetRing(chargingIndex);
-      chargingIndex = index;
-      chargeStart = performance.now();
+      if (index !== -1) confirmIndex(index);
     }
 
     function tick(time: number) {
@@ -232,18 +241,22 @@ export function OptionCloud({
         angleY += dt * 0.00025;
       }
 
-      if (chargingIndex !== null) {
-        const progress = wasm.chargeProgress(time - chargeStart, CHARGE_DURATION_MS);
-        const ring = ringRefs.current[chargingIndex];
+      if (holdingIndex !== null && !dragging) {
+        const progress = wasm.chargeProgress(time - holdStart, HOLD_DURATION_MS);
+        const ring = ringRefs.current[holdingIndex];
         if (ring) {
           ring.style.opacity = "1";
           ring.style.strokeDashoffset = String(100 * (1 - progress));
         }
         if (progress >= 1) {
-          const justConfirmed = chargingIndex;
-          chargingIndex = null;
-          confirmIndex(justConfirmed);
-          resetRing(justConfirmed);
+          const input = inputRefs.current[holdingIndex];
+          resetRing(holdingIndex);
+          holdingIndex = null;
+          holdPointerId = null;
+          if (input) {
+            input.checked = inputType === "checkbox" ? !input.checked : true;
+            input.dispatchEvent(new Event("change", { bubbles: true }));
+          }
         }
       }
 
@@ -281,6 +294,37 @@ export function OptionCloud({
       }
     })();
 
+    // Per-item hold tracking lives on the container (delegated) so it shares
+    // state cleanly with the drag system above — same pointerId, same
+    // dragging flag. e.target is traced back to which option's label (if
+    // any) was actually pressed via a data attribute set on each label.
+    function onItemPointerDown(e: PointerEvent) {
+      if (!wasm) return; // no engine loaded — fall back to instant native selection
+      const label = (e.target as HTMLElement).closest<HTMLElement>("[data-option-index]");
+      if (!label) return;
+      const index = Number(label.dataset.optionIndex);
+      if (holdingIndex !== null && holdingIndex !== index) cancelHold();
+      holdingIndex = index;
+      holdPointerId = e.pointerId;
+      holdStart = performance.now();
+    }
+    function onItemPointerUp(e: PointerEvent) {
+      if (holdingIndex !== null && holdPointerId === e.pointerId) cancelHold();
+    }
+    function onItemPointerLeave(e: PointerEvent) {
+      const label = (e.target as HTMLElement).closest<HTMLElement>("[data-option-index]");
+      if (!label) return;
+      const index = Number(label.dataset.optionIndex);
+      if (holdingIndex === index) cancelHold();
+    }
+    function onItemClick(e: MouseEvent) {
+      // The hold is what selects; suppress the label's default instant
+      // click-to-check so pointer/touch users can't shortcut past it. Native
+      // keyboard interaction doesn't dispatch click to get here, so it's
+      // unaffected.
+      if (enhancedRef.current) e.preventDefault();
+    }
+
     const resizeObserver = new ResizeObserver(() => sizeToContainer());
     resizeObserver.observe(container);
     container.addEventListener("pointerdown", onPointerDown);
@@ -289,6 +333,11 @@ export function OptionCloud({
     container.addEventListener("focusin", onFocusIn);
     container.addEventListener("focusout", onFocusOut);
     container.addEventListener("change", onChange);
+    container.addEventListener("pointerdown", onItemPointerDown);
+    container.addEventListener("pointerup", onItemPointerUp);
+    container.addEventListener("pointercancel", onItemPointerUp);
+    container.addEventListener("pointerleave", onItemPointerLeave, true);
+    container.addEventListener("click", onItemClick);
 
     return () => {
       cancelled = true;
@@ -300,12 +349,17 @@ export function OptionCloud({
       container.removeEventListener("focusin", onFocusIn);
       container.removeEventListener("focusout", onFocusOut);
       container.removeEventListener("change", onChange);
+      container.removeEventListener("pointerdown", onItemPointerDown);
+      container.removeEventListener("pointerup", onItemPointerUp);
+      container.removeEventListener("pointercancel", onItemPointerUp);
+      container.removeEventListener("pointerleave", onItemPointerLeave, true);
+      container.removeEventListener("click", onItemClick);
     };
     // `selected` is intentionally read only for its initial value (whether
     // to start already-frozen/already-confirmed); live changes come from the
     // "change" listener above, not from re-running this effect, so it's
     // excluded here on purpose — including it would tear down and rebuild
-    // the whole 3D engine (and reset rotation/drag/charge state) on every
+    // the whole 3D engine (and reset rotation/drag/hold state) on every
     // parent re-render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [options.length]);
@@ -341,6 +395,7 @@ export function OptionCloud({
             ref={(el) => {
               labelRefs.current[i] = el;
             }}
+            data-option-index={i}
             title={opt.description ?? opt.label}
             onPointerEnter={() => {
               hoveredIndex.current = i;
@@ -355,6 +410,9 @@ export function OptionCloud({
             }
           >
             <input
+              ref={(el) => {
+                inputRefs.current[i] = el;
+              }}
               type={inputType}
               name={fieldId}
               value={opt.value}
@@ -382,7 +440,7 @@ export function OptionCloud({
                   height="96"
                   rx="14"
                   fill="none"
-                  stroke="#4f46e5"
+                  stroke={RING_COLOR}
                   strokeWidth="4"
                   pathLength={100}
                   strokeDasharray={100}
