@@ -55,17 +55,12 @@ function mapRange(v: number, inMin: number, inMax: number, outMin: number, outMa
   return outMin + t * (outMax - outMin);
 }
 
-function labelVariantClasses(isSelected: boolean, enhanced: boolean, groupClass: string): string {
-  return [
-    isSelected ? "bg-indigo-50 ring-2 ring-indigo-600" : groupClass,
-    !enhanced && !isSelected && "hover:ring-2 hover:ring-indigo-400",
-  ]
-    .filter(Boolean)
-    .join(" ");
-}
-
-function captionVariantClasses(isSelected: boolean, weightClass: string): string {
-  return [weightClass, isSelected ? "text-indigo-700" : "text-slate-600"].join(" ");
+// The cloud itself never shows a persistent "selected" look anymore — that
+// moved to the dedicated display above it (see the component's return).
+// Items here only ever show their group tint, hover, and (while actively
+// held) the charge ring.
+function labelVariantClasses(enhanced: boolean, groupClass: string): string {
+  return [groupClass, !enhanced && "hover:ring-2 hover:ring-indigo-400"].filter(Boolean).join(" ");
 }
 
 export function OptionCloud({
@@ -81,16 +76,27 @@ export function OptionCloud({
 }) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const labelRefs = useRef<Array<HTMLLabelElement | null>>([]);
-  const captionRefs = useRef<Array<HTMLSpanElement | null>>([]);
   const ringRefs = useRef<Array<SVGRectElement | null>>([]);
   const inputRefs = useRef<Array<HTMLInputElement | null>>([]);
   const hoveredIndex = useRef<number | null>(null);
   const [enhanced, setEnhanced] = useState(false);
+  // The current selection, shown above the cloud instead of inside it — with
+  // 20+ scattered, rotating items, spotting which one is "selected" inside
+  // the cloud itself was hard to see at a glance. Only meaningful for
+  // single-select (radio) fields; multi-select fields don't have a single
+  // "the" selection to headline.
+  const [confirmedValue, setConfirmedValue] = useState<string | null>(
+    () => options.find((o) => selected.has(o.value))?.value ?? null
+  );
   // Mirrors `enhanced` into a ref so the effect's long-lived closures (set
   // up once, before `enhanced` first flips true) can read its current value
-  // instead of the one captured when those closures were created.
+  // instead of the one captured when those closures were created. Updated
+  // in its own effect rather than during render, which refs shouldn't be
+  // mutated in.
   const enhancedRef = useRef(enhanced);
-  enhancedRef.current = enhanced;
+  useEffect(() => {
+    enhancedRef.current = enhanced;
+  }, [enhanced]);
 
   const groupClassFor = useMemo(() => {
     const order: string[] = [];
@@ -140,8 +146,6 @@ export function OptionCloud({
     // which item is currently being held; the ring only advances while the
     // same pointer stays down on that item and the gesture hasn't turned
     // into a cloud-rotate drag. Releasing early cancels it with no change.
-    let confirmedIndex = options.findIndex((o) => selected.has(o.value));
-    if (confirmedIndex === -1) confirmedIndex = null as unknown as number;
     let holdingIndex: number | null = null;
     let holdPointerId: number | null = null;
     let holdStart = 0;
@@ -158,21 +162,6 @@ export function OptionCloud({
       resetRing(holdingIndex);
       holdingIndex = null;
       holdPointerId = null;
-    }
-
-    function confirmIndex(i: number) {
-      options.forEach((opt, idx) => {
-        const label = labelRefs.current[idx];
-        const caption = captionRefs.current[idx];
-        if (!label || !caption) return;
-        const isSel = idx === i;
-        label.className =
-          buildLabelBaseClasses(idx, enhancedRef.current) +
-          " " +
-          labelVariantClasses(isSel, enhancedRef.current, groupClassFor(opt.group));
-        caption.className = captionVariantClasses(isSel, WEIGHT_TEXT_CLASSES[opt.weight ?? "md"]);
-      });
-      confirmedIndex = i;
     }
 
     function sizeToContainer() {
@@ -223,13 +212,12 @@ export function OptionCloud({
     function onChange(e: Event) {
       // Fires both for our own programmatic commit (after a completed hold)
       // and for genuine native changes (keyboard arrow-key navigation within
-      // the radio group) — applying the confirmed look here, unconditionally,
+      // the radio group) — updating the top display here, unconditionally,
       // covers both without making keyboard users wait through a hold they
       // have no way to perform.
       hasSelection = true;
-      const value = (e.target as HTMLInputElement).value;
-      const index = options.findIndex((o) => o.value === value);
-      if (index !== -1) confirmIndex(index);
+      const input = e.target as HTMLInputElement;
+      if (inputType === "radio") setConfirmedValue(input.value);
     }
 
     function tick(time: number) {
@@ -376,101 +364,109 @@ export function OptionCloud({
       .join(" ");
   }
 
+  const confirmedOption = options.find((o) => o.value === confirmedValue);
+
   return (
-    <div
-      ref={containerRef}
-      className={
-        enhanced
-          ? "relative h-[380px] touch-none select-none sm:h-[460px]"
-          : "flex flex-wrap items-start justify-center gap-3 px-4 py-8"
-      }
-      style={enhanced ? { cursor: "grab" } : undefined}
-    >
-      {options.map((opt, i) => {
-        const isSelected = selected.has(opt.value);
-        const iconPx = WEIGHT_ICON_PX[opt.weight ?? "md"];
-        return (
-          <label
-            key={opt.value}
-            ref={(el) => {
-              labelRefs.current[i] = el;
-            }}
-            data-option-index={i}
-            title={opt.description ?? opt.label}
-            onPointerEnter={() => {
-              hoveredIndex.current = i;
-            }}
-            onPointerLeave={() => {
-              hoveredIndex.current = null;
-            }}
-            className={
-              buildLabelBaseClasses(i, enhanced) +
-              " " +
-              labelVariantClasses(isSelected, enhanced, groupClassFor(opt.group))
-            }
-          >
-            <input
+    <div>
+      {inputType === "radio" && (
+        <div className="mb-4 flex items-center justify-center gap-3 rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-3">
+          {confirmedOption?.icon ? (
+            <svg viewBox="0 0 24 24" width={28} height={28} fill={confirmedOption.icon.hex} aria-hidden="true">
+              <path d={confirmedOption.icon.path} />
+            </svg>
+          ) : null}
+          <span className="font-semibold text-indigo-700">
+            {confirmedOption ? confirmedOption.label : "Nothing selected yet"}
+          </span>
+        </div>
+      )}
+
+      <div
+        ref={containerRef}
+        className={
+          enhanced
+            ? "relative h-[380px] touch-none select-none sm:h-[460px]"
+            : "flex flex-wrap items-start justify-center gap-3 px-4 py-8"
+        }
+        style={enhanced ? { cursor: "grab" } : undefined}
+      >
+        {options.map((opt, i) => {
+          const isSelected = selected.has(opt.value);
+          const iconPx = WEIGHT_ICON_PX[opt.weight ?? "md"];
+          return (
+            <label
+              key={opt.value}
               ref={(el) => {
-                inputRefs.current[i] = el;
+                labelRefs.current[i] = el;
               }}
-              type={inputType}
-              name={fieldId}
-              value={opt.value}
-              defaultChecked={isSelected}
-              className="sr-only"
-            />
-            {enhanced && (
-              <svg
-                className="pointer-events-none absolute inset-0 h-full w-full overflow-visible"
-                viewBox="0 0 100 100"
-                preserveAspectRatio="none"
-                aria-hidden="true"
-              >
-                <rect
-                  ref={(el) => {
-                    ringRefs.current[i] = el;
-                    if (el) {
-                      el.style.opacity = "0";
-                      el.style.strokeDashoffset = "100";
-                    }
-                  }}
-                  x="2"
-                  y="2"
-                  width="96"
-                  height="96"
-                  rx="14"
-                  fill="none"
-                  stroke={RING_COLOR}
-                  strokeWidth="4"
-                  pathLength={100}
-                  strokeDasharray={100}
-                  strokeLinecap="round"
-                />
-              </svg>
-            )}
-            {opt.icon ? (
-              <svg
-                viewBox="0 0 24 24"
-                width={iconPx}
-                height={iconPx}
-                fill={opt.icon.hex}
-                aria-hidden="true"
-                className="shrink-0"
-              >
-                <path d={opt.icon.path} />
-              </svg>
-            ) : null}
-            <span
-              ref={(el) => {
-                captionRefs.current[i] = el;
+              data-option-index={i}
+              title={opt.description ?? opt.label}
+              onPointerEnter={() => {
+                hoveredIndex.current = i;
               }}
-              className={captionVariantClasses(isSelected, WEIGHT_TEXT_CLASSES[opt.weight ?? "md"])}
+              onPointerLeave={() => {
+                hoveredIndex.current = null;
+              }}
+              className={
+                buildLabelBaseClasses(i, enhanced) + " " + labelVariantClasses(enhanced, groupClassFor(opt.group))
+              }
             >
-              {opt.label}
-            </span>
-          </label>
-        );
-      })}
+              <input
+                ref={(el) => {
+                  inputRefs.current[i] = el;
+                }}
+                type={inputType}
+                name={fieldId}
+                value={opt.value}
+                defaultChecked={isSelected}
+                className="sr-only"
+              />
+              {enhanced && (
+                <svg
+                  className="pointer-events-none absolute inset-0 h-full w-full overflow-visible"
+                  viewBox="0 0 100 100"
+                  preserveAspectRatio="none"
+                  aria-hidden="true"
+                >
+                  <rect
+                    ref={(el) => {
+                      ringRefs.current[i] = el;
+                      if (el) {
+                        el.style.opacity = "0";
+                        el.style.strokeDashoffset = "100";
+                      }
+                    }}
+                    x="2"
+                    y="2"
+                    width="96"
+                    height="96"
+                    rx="14"
+                    fill="none"
+                    stroke={RING_COLOR}
+                    strokeWidth="4"
+                    pathLength={100}
+                    strokeDasharray={100}
+                    strokeLinecap="round"
+                  />
+                </svg>
+              )}
+              {opt.icon ? (
+                <svg
+                  viewBox="0 0 24 24"
+                  width={iconPx}
+                  height={iconPx}
+                  fill={opt.icon.hex}
+                  aria-hidden="true"
+                  className="shrink-0"
+                >
+                  <path d={opt.icon.path} />
+                </svg>
+              ) : null}
+              <span className={WEIGHT_TEXT_CLASSES[opt.weight ?? "md"] + " text-slate-600"}>{opt.label}</span>
+            </label>
+          );
+        })}
+      </div>
     </div>
   );
 }
