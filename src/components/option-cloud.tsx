@@ -371,17 +371,15 @@ export function OptionCloud({
   return (
     <div>
       {inputType === "radio" && (
-        <div className="mb-4 flex items-center justify-center gap-3 rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-3">
-          {confirmedOption?.icon ? (
-            <svg viewBox="0 0 24 24" width={28} height={28} fill={confirmedOption.icon.hex} role="img">
-              <title>{confirmedOption.label}</title>
+        <div className="mb-4 flex flex-col items-center justify-center gap-1 rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-3">
+          {confirmedOption?.icon && (
+            <svg viewBox="0 0 24 24" width={32} height={32} fill={confirmedOption.icon.hex} aria-hidden="true">
               <path d={confirmedOption.icon.path} />
             </svg>
-          ) : (
-            <span className="font-semibold text-indigo-700">
-              {confirmedOption ? confirmedOption.label : "Nothing selected yet"}
-            </span>
           )}
+          <span className="font-semibold text-indigo-700">
+            {confirmedOption ? confirmedOption.label : "Nothing selected yet"}
+          </span>
         </div>
       )}
 
