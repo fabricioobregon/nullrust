@@ -39,6 +39,8 @@ export type FieldOption = {
   group?: string;
   /** Inline logo rendered instead of (plain-text) `label` in a cloud display. */
   icon?: { path: string; hex: string };
+  /** Shows a small "Recommended" badge next to this option. At most one per field, by convention. */
+  recommended?: boolean;
 };
 
 export type AspectField = {

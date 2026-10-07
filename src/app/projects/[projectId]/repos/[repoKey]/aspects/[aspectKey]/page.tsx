@@ -7,6 +7,7 @@ import { AspectField, FieldOption } from "@/lib/aspects/types";
 import { compatibleOptions, narrowingReasons, RepoAnswers } from "@/lib/aspects/compatibility";
 import { RepoKey, getRepo, isRepoKey } from "@/lib/repos";
 import { OptionCloud } from "@/components/option-cloud";
+import { SearchableOptions } from "@/components/searchable-options";
 
 export const dynamic = "force-dynamic";
 
@@ -72,24 +73,12 @@ function Field({
           inputType={inputType as "radio" | "checkbox"}
         />
       ) : (
-        <div className="mt-2 flex flex-wrap gap-2">
-          {displayOptions.map((opt) => (
-            <label
-              key={opt.value}
-              className="flex cursor-pointer items-center gap-2 rounded-md border border-slate-300 px-3 py-1.5 text-sm has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-50 has-[:checked]:text-indigo-700"
-              title={opt.description}
-            >
-              <input
-                type={inputType}
-                name={field.id}
-                value={opt.value}
-                defaultChecked={selected.has(opt.value)}
-                className="accent-indigo-600"
-              />
-              {opt.label}
-            </label>
-          ))}
-        </div>
+        <SearchableOptions
+          options={displayOptions}
+          selected={selected}
+          fieldId={field.id}
+          inputType={inputType as "radio" | "checkbox"}
+        />
       )}
     </fieldset>
   );
@@ -127,6 +116,9 @@ export default async function AspectPage({
           <span>{aspect.icon}</span> {aspect.title}
         </h1>
         <p className="mt-1 text-slate-600">{aspect.tagline}</p>
+        <p className="mt-1 text-sm text-slate-400">
+          Nothing here is permanent &mdash; every answer can be changed later.
+        </p>
       </div>
 
       <form action={action} className="space-y-6">
