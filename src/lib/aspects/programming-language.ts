@@ -12,7 +12,7 @@ export const programmingLanguage: AspectDefinition = {
   key: "programming-language",
   title: "Programming Language",
   icon: "💻",
-  tagline: "Primary language, version target, and type safety & validation.",
+  tagline: "Primary language, version target, type safety & validation, and concurrency.",
   scope: "all",
   cards: [
     {
@@ -229,6 +229,98 @@ export const programmingLanguage: AspectDefinition = {
               value: "backend-only",
               label: "Backend-only validation, frontend trusts UI constraints",
               description: "Fewer moving parts, but a non-browser client (another service, a script) gets no validation at all client-side.",
+            },
+          ],
+        },
+      ],
+    },
+    {
+      id: "concurrency",
+      title: "Concurrency & async",
+      description:
+        "How concurrent/async work is actually written — comparable in weight to error handling for how an AI agent structures generated code, and just as easy to get wrong by defaulting to training-data habits from a different language.",
+      fields: [
+        {
+          id: "concurrency-model",
+          label: "Concurrency model",
+          type: "single",
+          options: [
+            {
+              value: "async-await",
+              label: "async/await",
+              description: "Cooperative concurrency on a single-threaded event loop (or similar) — the mainstream default for TS/JS/Python/C#/Rust/Swift.",
+              recommended: true,
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["typescript", "javascript", "python", "csharp", "rust", "swift"] }],
+            },
+            {
+              value: "goroutines-channels",
+              label: "Goroutines + channels",
+              description: "Lightweight language-managed threads communicating over channels — Go's idiomatic, effectively mandatory model.",
+              recommended: true,
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["go"] }],
+            },
+            {
+              value: "actor-model-beam",
+              label: "Actor model (BEAM processes)",
+              description: "Isolated, message-passing processes supervised for failure — Elixir's idiomatic concurrency, not a library choice.",
+              recommended: true,
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["elixir"] }],
+            },
+            {
+              value: "coroutines-structured",
+              label: "Structured coroutines",
+              description: "Kotlin's coroutines + structured concurrency (scopes, cancellation propagation) rather than raw threads.",
+              recommended: true,
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["kotlin"] }],
+            },
+            {
+              value: "threads-locks",
+              label: "Threads + locks",
+              description: "OS-level threads with explicit synchronization — the traditional model for Java and C/C++.",
+              recommended: true,
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["java", "c", "cpp"] }],
+            },
+            {
+              value: "primarily-synchronous",
+              label: "Primarily synchronous, no real concurrency model",
+              description: "No concurrency to speak of in this codebase — fine for a script, CLI tool, or simple sequential service.",
+            },
+          ],
+        },
+        {
+          id: "concurrency-patterns",
+          label: "Patterns to adopt",
+          type: "multi",
+          options: [
+            {
+              value: "no-shared-mutable-state",
+              label: "No shared mutable state across concurrent units without explicit synchronization",
+              description: "The single most common source of concurrency bugs, regardless of language.",
+              recommended: true,
+            },
+            {
+              value: "structured-concurrency",
+              label: "Structured concurrency — a child task's lifetime never outlives its parent scope",
+              description: "No detached/fire-and-forget tasks that can leak or outlive what spawned them.",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["kotlin", "swift", "python"] }],
+            },
+            {
+              value: "cpu-bound-off-event-loop",
+              label: "CPU-bound work moved off the event loop (worker threads/processes)",
+              description: "A tight synchronous loop on the event-loop thread blocks every other concurrent task.",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["typescript", "javascript", "python"] }],
+            },
+            {
+              value: "gil-aware-multiprocessing",
+              label: "GIL-aware: multiprocessing (not threading) for CPU-bound Python work",
+              description: "CPython's GIL means threads don't parallelize CPU-bound work — only I/O-bound work benefits.",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["python"] }],
+            },
+            {
+              value: "no-blocking-calls-in-async",
+              label: "No blocking/synchronous calls inside async functions",
+              description: "A single blocking call stalls every other task sharing that event loop/thread.",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["typescript", "javascript", "python", "rust", "csharp"] }],
             },
           ],
         },

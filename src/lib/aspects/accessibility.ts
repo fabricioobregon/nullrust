@@ -59,6 +59,30 @@ export const accessibility: AspectDefinition = {
               // Native alike, but not a non-JSX mobile stack.
               compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["typescript", "javascript"] }],
             },
+            {
+              value: "xctest-a11y-audits",
+              label: "XCTest accessibility audits (Xcode Accessibility Inspector)",
+              description: "performAccessibilityAudit() in XCUITest, or manual inspection via Xcode's Accessibility Inspector.",
+              compatibleWhen: [{ aspectKey: "framework", fieldId: "framework", values: ["swiftui"] }],
+            },
+            {
+              value: "android-accessibility-scanner",
+              label: "Android Accessibility Scanner / Espresso accessibility checks",
+              description: "Google's on-device scanner app, or androidx.test.espresso.accessibility for automated checks in instrumented tests.",
+              compatibleWhen: [{ aspectKey: "framework", fieldId: "framework", values: ["jetpack-compose"] }],
+            },
+            {
+              value: "flutter-a11y-guideline",
+              label: "Flutter accessibility guideline checks",
+              description: "flutter_test's meetsGuideline() matchers (android/iOS tap target size, text contrast, labeled tappable).",
+              compatibleWhen: [{ aspectKey: "framework", fieldId: "framework", values: ["flutter"] }],
+            },
+            {
+              value: "react-native-a11y-engine",
+              label: "react-native-accessibility-engine",
+              description: "Lints React Native component trees for missing accessibility props.",
+              compatibleWhen: [{ aspectKey: "framework", fieldId: "framework", values: ["react-native"] }],
+            },
             { value: "none", label: "None" },
           ],
         },
@@ -68,7 +92,14 @@ export const accessibility: AspectDefinition = {
           type: "multi",
           options: [
             { value: "screen-reader-testing", label: "Manual screen reader testing (VoiceOver/NVDA/JAWS)" },
-            { value: "keyboard-only-testing", label: "Keyboard-only navigation testing" },
+            {
+              value: "keyboard-only-testing",
+              label: "Keyboard-only navigation testing",
+              // No keyboard-navigation concept on a native touch UI —
+              // screen-reader-testing/a11y-in-review-checklist stay
+              // available regardless, so this can't empty the field out.
+              repos: ["frontend"],
+            },
             { value: "a11y-in-review-checklist", label: "Accessibility checklist as part of PR review" },
           ],
         },
