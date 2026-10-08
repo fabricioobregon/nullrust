@@ -91,6 +91,30 @@ export function isValueCompatible(
 }
 
 /**
+ * True hard exclusion for a whole field — distinct from compatibleOptions()'s
+ * per-option narrowing, which always falls back to showing everything
+ * rather than leaving a field with zero options. That fallback is right for
+ * "we don't have a rule for this combination yet, don't dead-end the UI" —
+ * but wrong for "this field flat-out doesn't apply here" (e.g. table/column
+ * naming once the engine is a document store), where every option would be
+ * excluded at once and the fallback would silently undo the exclusion.
+ *
+ * An unanswered upstream never hides the field — there's nothing to judge
+ * by yet, so the safe default is to show it, same philosophy as
+ * compatibleOptions()'s "nothing answered → show everything" case.
+ */
+export function isFieldVisible(field: AspectField, answers: RepoAnswers, repoKind: RepoKind): boolean {
+  if (field.repos && !field.repos.includes(repoKind)) return false;
+  if (!field.compatibleWhen) return true;
+  return field.compatibleWhen.every((r) => {
+    if (!isAnswered(answers, r.aspectKey, r.fieldId)) return true;
+    const upstream = answers[r.aspectKey]![r.fieldId]!;
+    const upstreamValues = Array.isArray(upstream) ? upstream : [upstream];
+    return upstreamValues.some((v) => r.values.includes(v));
+  });
+}
+
+/**
  * Human-readable description of what's actually driving the narrowing, e.g.
  * ["this repo (Mobile)", "Language = Dart"] — so the UI can say exactly why
  * options disappeared instead of a generic "stuff changed" message.

@@ -193,6 +193,10 @@ export const framework: AspectDefinition = {
           id: "rendering",
           label: "Rendering / architecture style",
           type: "single",
+          // A mobile app has no "rendering model" in this sense at all
+          // (no SSR/SPA/static/hybrid/api-only) — hard-excluded rather than
+          // narrowed, so it doesn't fall back to showing all 5 anyway.
+          repos: ["backend", "frontend"],
           options: [
             { value: "ssr", label: "Server-rendered (SSR)", description: "Each request renders fresh on the server — best for SEO and freshness." },
             { value: "spa", label: "Client-rendered SPA", description: "Renders in the browser after an initial load — feels like an app, worse for SEO." },

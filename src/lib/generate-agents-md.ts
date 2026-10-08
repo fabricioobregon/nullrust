@@ -1,4 +1,5 @@
 import { aspectsForRepo } from "@/lib/aspects/registry";
+import { isFieldVisible, RepoAnswers } from "@/lib/aspects/compatibility";
 import { AspectAnswers, AspectDefinition, AspectField } from "@/lib/aspects/types";
 import { RepoKind } from "@/lib/repos";
 
@@ -24,11 +25,17 @@ function renderField(field: AspectField, answers: AspectAnswers): string | null 
   return `- **${field.label}:** ${optionLabel(field, raw as string)}`;
 }
 
-function renderAspect(aspect: AspectDefinition, answers: AspectAnswers): string | null {
+function renderAspect(aspect: AspectDefinition, repoAnswers: RepoAnswers, repoKind: RepoKind): string | null {
   const lines: string[] = [];
+  const answers = repoAnswers[aspect.key] ?? {};
 
   for (const card of aspect.cards) {
     const fieldLines = card.fields
+      // A field hidden by the same hard exclusion the editor uses (e.g.
+      // table naming once the engine is a document store) shouldn't leak
+      // a stale answer into the generated guardrails either — cleanup.ts
+      // clears these on save, but this stays correct even between saves.
+      .filter((f) => isFieldVisible(f, repoAnswers, repoKind))
       .map((f) => renderField(f, answers))
       .filter((l): l is string => l !== null);
     if (fieldLines.length === 0) continue;
@@ -46,7 +53,7 @@ export function generateAgentsMd(
   answersByAspect: Record<string, AspectAnswers>
 ): string {
   const sections = aspectsForRepo(repoKind)
-    .map((aspect) => renderAspect(aspect, answersByAspect[aspect.key] ?? {}))
+    .map((aspect) => renderAspect(aspect, answersByAspect, repoKind))
     .filter((s): s is string => s !== null);
 
   const header = [

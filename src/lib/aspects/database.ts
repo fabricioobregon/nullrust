@@ -168,6 +168,10 @@ export const database: AspectDefinition = {
           id: "column-case",
           label: "Column / table naming",
           type: "single",
+          // Hard-excluded (not narrowed) for a document/key-value engine —
+          // MongoDB/DynamoDB have collections/items, not tables and
+          // columns, so every option here would be wrong at once.
+          compatibleWhen: [{ aspectKey: "database", fieldId: "engine", values: RELATIONAL_ENGINES }],
           options: [
             { value: "snake_case", label: "snake_case (users, first_name)" },
             { value: "camelCase", label: "camelCase (users, firstName)" },
@@ -188,6 +192,7 @@ export const database: AspectDefinition = {
           id: "table-naming",
           label: "Table naming",
           type: "single",
+          compatibleWhen: [{ aspectKey: "database", fieldId: "engine", values: RELATIONAL_ENGINES }],
           options: [
             { value: "plural", label: "Plural table names (users, orders)" },
             { value: "singular", label: "Singular table names (user, order)" },

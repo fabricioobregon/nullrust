@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { AspectAnswers, AspectDefinition, AspectField, FieldOption } from "@/lib/aspects/types";
-import { compatibleOptions, isValueCompatible, narrowingReasons, RepoAnswers } from "@/lib/aspects/compatibility";
+import { compatibleOptions, isFieldVisible, isValueCompatible, narrowingReasons, RepoAnswers } from "@/lib/aspects/compatibility";
 import { RepoKind } from "@/lib/repos";
 import { OptionCloud } from "@/components/option-cloud";
 import { SearchableOptions } from "@/components/searchable-options";
@@ -22,6 +22,8 @@ function Field({
   repoTitle: string;
   onValueChange: (value: string | string[]) => void;
 }) {
+  if (!isFieldVisible(field, repoAnswers, repoKind)) return null;
+
   if (field.type === "text") {
     return (
       <div>
@@ -232,7 +234,9 @@ export function AspectForm({
         </div>
       )}
 
-      {aspect.cards.map((card) => (
+      {aspect.cards
+        .filter((card) => card.fields.some((field) => isFieldVisible(field, liveAnswers, repoKind)))
+        .map((card) => (
         <div key={card.id} className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm space-y-5">
           <div>
             <h2 className="font-medium">{card.title}</h2>

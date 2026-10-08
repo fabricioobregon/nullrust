@@ -1,8 +1,13 @@
 import { RepoKind } from "@/lib/repos";
 import { getRepoAnswers, saveAspectAnswers } from "@/lib/preferences";
 import { aspectsForRepo } from "./registry";
-import { isValueCompatible } from "./compatibility";
-import { AspectAnswers } from "./types";
+import { isFieldVisible, isValueCompatible } from "./compatibility";
+import { AspectAnswers, AspectField } from "./types";
+
+function labelsFor(field: AspectField, raw: string | string[]): string[] {
+  const values = Array.isArray(raw) ? raw : [raw];
+  return values.map((v) => field.options?.find((o) => o.value === v)?.label ?? v);
+}
 
 export type ClearedAnswer = {
   aspectTitle: string;
@@ -43,11 +48,22 @@ export async function cleanupIncompatibleAnswers(
 
       for (const card of aspect.cards) {
         for (const field of card.fields) {
-          const hasRules = field.options?.some((o) => o.compatibleWhen?.length);
-          if (!hasRules) continue;
-
           const current = updated[field.id];
           if (current === undefined) continue;
+
+          // Field-level hard exclusion (e.g. table naming once the engine
+          // is a document store) clears the whole answer — distinct from
+          // the per-option check below, which only drops the values that
+          // no longer qualify within a field that's still shown.
+          if (!isFieldVisible(field, answers, repoKind)) {
+            cleared.push({ aspectTitle: aspect.title, fieldLabel: field.label, clearedLabels: labelsFor(field, current) });
+            updated[field.id] = undefined;
+            aspectChanged = true;
+            continue;
+          }
+
+          const hasRules = field.options?.some((o) => o.compatibleWhen?.length);
+          if (!hasRules) continue;
 
           if (Array.isArray(current)) {
             const kept = current.filter((v) => isValueCompatible(field, v, answers, repoKind));

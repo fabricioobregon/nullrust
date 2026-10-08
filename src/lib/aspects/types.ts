@@ -58,6 +58,24 @@ export type AspectField = {
    * plain pill UI.
    */
   display?: "cloud";
+  /**
+   * Hard exclusion for the whole field by repo kind — e.g. a rendering-model
+   * question that only makes sense for web repos, not mobile. Unlike
+   * FieldOption.repos/compatibleWhen (which narrow *within* an always-shown
+   * field, and fall back to showing everything if that would empty it out),
+   * this and `compatibleWhen` below skip rendering the field entirely with
+   * no fallback — there's always something else on the page, so there's no
+   * "empty picker" problem to protect against here.
+   */
+  repos?: RepoKind[];
+  /**
+   * Hard exclusion for the whole field by another field's answer — e.g.
+   * table/column naming doesn't apply once the database engine is a
+   * document store. ALL rules must pass once their upstream is answered;
+   * an unanswered upstream never hides the field (nothing to judge by yet).
+   * See isFieldVisible in compatibility.ts.
+   */
+  compatibleWhen?: CompatibilityRule[];
 };
 
 /** One card rendered on an aspect page, grouping related fields. */
