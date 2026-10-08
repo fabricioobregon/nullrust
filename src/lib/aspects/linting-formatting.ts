@@ -46,6 +46,46 @@ export const lintingFormatting: AspectDefinition = {
               label: "Checkstyle",
               compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["java", "kotlin"] }],
             },
+            {
+              value: "clippy",
+              label: "Clippy",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["rust"] }],
+            },
+            {
+              value: "swiftlint",
+              label: "SwiftLint",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["swift"] }],
+            },
+            {
+              value: "scalafix",
+              label: "Scalafix",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["scala"] }],
+            },
+            {
+              value: "dart-analyze",
+              label: "dart analyze",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["dart"] }],
+            },
+            {
+              value: "phpcs",
+              label: "PHP_CodeSniffer",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["php"] }],
+            },
+            {
+              value: "credo",
+              label: "Credo",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["elixir"] }],
+            },
+            {
+              value: "roslyn-analyzers",
+              label: "Roslyn analyzers",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["csharp"] }],
+            },
+            {
+              value: "other-linter",
+              label: "Other / not listed here",
+              description: "For a language without a dedicated option above (C, C++, Objective-C, Haskell, Clojure, F#, Lua, Perl, R, and others).",
+            },
           ],
         },
         {
@@ -77,6 +117,51 @@ export const lintingFormatting: AspectDefinition = {
               value: "rustfmt",
               label: "rustfmt",
               compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["rust"] }],
+            },
+            {
+              value: "swiftformat",
+              label: "SwiftFormat",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["swift"] }],
+            },
+            {
+              value: "scalafmt",
+              label: "Scalafmt",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["scala"] }],
+            },
+            {
+              value: "dart-format",
+              label: "dart format",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["dart"] }],
+            },
+            {
+              value: "php-cs-fixer",
+              label: "PHP-CS-Fixer",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["php"] }],
+            },
+            {
+              value: "ktlint",
+              label: "ktlint",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["kotlin"] }],
+            },
+            {
+              value: "google-java-format",
+              label: "google-java-format",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["java"] }],
+            },
+            {
+              value: "standardrb",
+              label: "StandardRB",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["ruby"] }],
+            },
+            {
+              value: "dotnet-format",
+              label: "dotnet format",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["csharp"] }],
+            },
+            {
+              value: "other-formatter",
+              label: "Other / not listed here",
+              description: "For a language without a dedicated option above (C, C++, Objective-C, Haskell, Clojure, F#, Lua, Perl, R, and others).",
             },
           ],
         },

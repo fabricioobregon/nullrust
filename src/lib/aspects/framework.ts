@@ -187,6 +187,18 @@ export const framework: AspectDefinition = {
               repos: ["mobile"],
               compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["csharp"] }],
             },
+            {
+              value: "none",
+              label: "None — no application framework",
+              description: "No framework in use (common for C, C++, Haskell, Lua, and similar) — or a deliberate choice to build on bare language primitives.",
+              // Deliberately ungated — every language/repo kind can
+              // legitimately have no framework. Also what keeps this field
+              // from ever hitting compatibleOptions()'s empty-field
+              // fallback: languages like C/C++/Haskell/Lua/Perl/R have no
+              // other option at all, which previously meant every other
+              // language's framework (Django, Rails, Next.js, ...) showed
+              // up as "compatible" with them. Found by verify-registry.ts.
+            },
           ],
         },
         {

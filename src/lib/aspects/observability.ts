@@ -108,7 +108,7 @@ export const observability: AspectDefinition = {
                 {
                   aspectKey: "programming-language",
                   fieldId: "language",
-                  values: ["java", "csharp", "python", "ruby", "php", "kotlin", "swift", "javascript", "typescript", "lua", "perl", "r", "clojure"],
+                  values: ["java", "csharp", "python", "ruby", "php", "kotlin", "swift", "javascript", "typescript", "lua", "perl", "r", "clojure", "dart", "objective-c"],
                 },
               ],
             },

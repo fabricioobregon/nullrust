@@ -162,31 +162,31 @@ export const programmingLanguage: AspectDefinition = {
           id: "library",
           label: "Runtime schema validation library",
           type: "single",
-          // Not relevant to an infra repo — the aspect itself is scope:
-          // "all" for the other fields in this card, so this one is
-          // restricted per-option instead, same mechanism Framework/
-          // Database already use for a repo-specific option.
+          // Field-level exclusion, not per-option: every option here used to
+          // be tagged repos:["backend","frontend","mobile"] individually —
+          // for an infra/"other" repo that excludes all of them at once and
+          // triggers compatibleOptions()'s fallback, silently showing every
+          // option anyway. Found by scripts/verify-registry.ts, the exact
+          // bug class error-shape and the ORM fields already had.
+          repos: ["backend", "frontend", "mobile"],
           options: [
             {
               value: "zod",
               label: "Zod",
               description: "The default for new TS projects — its inferred types are what tsc then checks.",
               recommended: true,
-              repos: ["backend", "frontend", "mobile"],
               compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["typescript", "javascript"] }],
             },
             {
               value: "yup",
               label: "Yup",
               description: "Older, still common in pre-existing React Hook Form / Formik setups.",
-              repos: ["backend", "frontend", "mobile"],
               compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["typescript", "javascript"] }],
             },
             {
               value: "joi",
               label: "Joi",
               description: "Node-ecosystem veteran, common on Express/Hapi backends predating Zod.",
-              repos: ["backend", "frontend", "mobile"],
               compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["typescript", "javascript"] }],
             },
             {
@@ -194,21 +194,18 @@ export const programmingLanguage: AspectDefinition = {
               label: "Pydantic",
               description: "The Python default — the same model doubles as the type annotation and the runtime validator.",
               recommended: true,
-              repos: ["backend", "frontend", "mobile"],
               compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["python"] }],
             },
             {
               value: "class-validator",
               label: "class-validator",
               description: "Decorator-based validation, the NestJS-ecosystem default.",
-              repos: ["backend", "frontend", "mobile"],
               compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["typescript"] }],
             },
             {
               value: "json-schema",
               label: "Raw JSON Schema",
               description: "Language-agnostic — usable from any language via an ajv/jsonschema-style library.",
-              repos: ["backend", "frontend", "mobile"],
             },
           ],
         },
@@ -216,24 +213,22 @@ export const programmingLanguage: AspectDefinition = {
           id: "validation-scope",
           label: "Where schemas are shared",
           type: "single",
+          repos: ["backend", "frontend", "mobile"],
           options: [
             {
               value: "shared-frontend-backend",
               label: "Single shared schema, used on both client and server",
               description: "One schema, imported on both sides — the two can't silently drift apart.",
-              repos: ["backend", "frontend", "mobile"],
             },
             {
               value: "duplicated",
               label: "Separate schemas per side, kept manually in sync",
               description: "Common when client and server are different languages — needs discipline to keep aligned.",
-              repos: ["backend", "frontend", "mobile"],
             },
             {
               value: "backend-only",
               label: "Backend-only validation, frontend trusts UI constraints",
               description: "Fewer moving parts, but a non-browser client (another service, a script) gets no validation at all client-side.",
-              repos: ["backend", "frontend", "mobile"],
             },
           ],
         },

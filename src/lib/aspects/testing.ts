@@ -51,6 +51,43 @@ export const testing: AspectDefinition = {
               label: "xUnit / NUnit",
               compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["csharp"] }],
             },
+            {
+              value: "cargo-test",
+              label: "cargo test",
+              description: "Built into the toolchain — no separate framework to pick.",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["rust"] }],
+            },
+            {
+              value: "xctest",
+              label: "XCTest",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["swift"] }],
+            },
+            {
+              value: "scalatest",
+              label: "ScalaTest",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["scala"] }],
+            },
+            {
+              value: "exunit",
+              label: "ExUnit",
+              description: "Built into the toolchain — no separate framework to pick.",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["elixir"] }],
+            },
+            {
+              value: "phpunit",
+              label: "PHPUnit",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["php"] }],
+            },
+            {
+              value: "flutter-test",
+              label: "flutter test",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["dart"] }],
+            },
+            {
+              value: "other-unit-framework",
+              label: "Other / not listed here",
+              description: "For a language without a dedicated option above (C, C++, Objective-C, Haskell, Clojure, F#, Lua, Perl, R, and others).",
+            },
           ],
         },
         {

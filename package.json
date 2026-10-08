@@ -5,10 +5,12 @@
   "scripts": {
     "predev": "prisma migrate deploy",
     "dev": "next dev",
+    "prebuild": "npm run verify-registry",
     "build": "next build",
     "prestart": "prisma migrate deploy",
     "start": "next start",
     "lint": "eslint",
+    "verify-registry": "tsx scripts/verify-registry.ts",
     "postinstall": "prisma generate",
     "db:reset": "prisma migrate reset",
     "wasm:build": "asc assembly/cloud3d.ts --outFile public/wasm/cloud3d.wasm --optimize --noAssert"
@@ -30,6 +32,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.3.5",
     "tailwindcss": "^4",
+    "tsx": "^4.23.15",
     "typescript": "^5"
   }
 }
