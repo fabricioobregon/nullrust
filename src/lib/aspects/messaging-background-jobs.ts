@@ -46,9 +46,24 @@ export const messagingBackgroundJobs: AspectDefinition = {
           label: "Background job runner",
           type: "single",
           options: [
-            { value: "bullmq", label: "BullMQ" },
-            { value: "sidekiq", label: "Sidekiq" },
-            { value: "celery", label: "Celery" },
+            {
+              value: "bullmq",
+              label: "BullMQ",
+              // Each of these three is a single-ecosystem library, not a
+              // general-purpose choice — cloud-tasks/cron-scripts/none stay
+              // ungated, so this can never empty the field out.
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["typescript", "javascript"] }],
+            },
+            {
+              value: "sidekiq",
+              label: "Sidekiq",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["ruby"] }],
+            },
+            {
+              value: "celery",
+              label: "Celery",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["python"] }],
+            },
             { value: "cloud-tasks", label: "Cloud Tasks / managed queue-triggered functions" },
             { value: "cron-scripts", label: "Cron-triggered scripts" },
             { value: "none", label: "None" },

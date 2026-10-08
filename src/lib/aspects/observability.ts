@@ -155,11 +155,19 @@ export const observability: AspectDefinition = {
           label: "API error response shape",
           type: "single",
           description: "Only relevant once an in-code failure crosses an API boundary — not applicable to a repo with no API surface.",
+          // Field-level exclusion, not per-option: every option here was
+          // previously tagged repos:["backend"] individually, which for a
+          // frontend/mobile/infra repo empties the field entirely and
+          // triggers compatibleOptions()'s "never show zero options"
+          // fallback — silently showing all 4 anyway. Exact repeat of the
+          // bug the ORM fields had; caught auditing this card specifically
+          // because it was written before that fallback issue was found.
+          repos: ["backend"],
           options: [
-            { value: "rfc7807", label: "RFC 7807 Problem Details", repos: ["backend"] },
-            { value: "custom-envelope", label: "Custom { error: { code, message } } envelope", repos: ["backend"] },
-            { value: "graphql-errors", label: "GraphQL errors array with extensions.code", repos: ["backend"] },
-            { value: "grpc-status", label: "gRPC status codes", repos: ["backend"] },
+            { value: "rfc7807", label: "RFC 7807 Problem Details" },
+            { value: "custom-envelope", label: "Custom { error: { code, message } } envelope" },
+            { value: "graphql-errors", label: "GraphQL errors array with extensions.code" },
+            { value: "grpc-status", label: "gRPC status codes" },
           ],
         },
       ],

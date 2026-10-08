@@ -44,8 +44,21 @@ export const accessibility: AspectDefinition = {
           type: "multi",
           options: [
             { value: "axe-core", label: "axe-core (jest-axe / @axe-core/playwright)" },
-            { value: "lighthouse-ci", label: "Lighthouse CI accessibility audits" },
-            { value: "eslint-jsx-a11y", label: "eslint-plugin-jsx-a11y" },
+            {
+              value: "lighthouse-ci",
+              label: "Lighthouse CI accessibility audits",
+              // Lighthouse audits web pages — no equivalent for a native
+              // mobile app. axe-core/eslint-jsx-a11y/none stay available
+              // regardless, so this can never empty the field out.
+              repos: ["frontend"],
+            },
+            {
+              value: "eslint-jsx-a11y",
+              label: "eslint-plugin-jsx-a11y",
+              // A JSX-linting plugin — applies to React web and React
+              // Native alike, but not a non-JSX mobile stack.
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["typescript", "javascript"] }],
+            },
             { value: "none", label: "None" },
           ],
         },

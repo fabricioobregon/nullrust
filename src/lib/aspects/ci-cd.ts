@@ -124,7 +124,15 @@ export const ciCd: AspectDefinition = {
           label: "Release automation",
           type: "multi",
           options: [
-            { value: "changesets", label: "Changesets" },
+            {
+              value: "changesets",
+              label: "Changesets",
+              // JS/TS-ecosystem specific (the `changesets` npm package, built
+              // for JS/TS monorepos) — semantic-release/release-please/
+              // manual-changelog all remain available for every other
+              // language, so this narrowing can never empty the field out.
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["typescript", "javascript"] }],
+            },
             { value: "semantic-release", label: "semantic-release" },
             { value: "release-please", label: "release-please" },
             { value: "manual-changelog", label: "Manually maintained CHANGELOG" },

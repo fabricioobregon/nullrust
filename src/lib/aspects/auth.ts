@@ -99,7 +99,13 @@ export const auth: AspectDefinition = {
           options: [
             { value: "middleware", label: "Route middleware / gateway" },
             { value: "service-layer", label: "Service/business-logic layer" },
-            { value: "db-row-level-security", label: "Database row-level security" },
+            {
+              value: "db-row-level-security",
+              label: "Database row-level security",
+              // RLS is a real, native Postgres feature — not a general SQL
+              // one (MySQL has no equivalent, Mongo/Dynamo have no "rows").
+              compatibleWhen: [{ aspectKey: "database", fieldId: "engine", values: ["postgresql"] }],
+            },
             { value: "ui-only", label: "UI-level only (not a real boundary)" },
           ],
         },

@@ -31,7 +31,13 @@ export const caching: AspectDefinition = {
           options: [
             { value: "redis", label: "Redis" },
             { value: "memcached", label: "Memcached" },
-            { value: "dynamodb-dax", label: "DynamoDB Accelerator (DAX)" },
+            {
+              value: "dynamodb-dax",
+              label: "DynamoDB Accelerator (DAX)",
+              // DAX is a DynamoDB-specific accelerator, not a general cache
+              // store — redis/memcached/none stay ungated regardless.
+              compatibleWhen: [{ aspectKey: "database", fieldId: "engine", values: ["dynamodb"] }],
+            },
             { value: "none", label: "None" },
           ],
         },

@@ -16,11 +16,31 @@ export const i18nLocalization: AspectDefinition = {
           label: "i18n library",
           type: "single",
           options: [
-            { value: "i18next", label: "i18next" },
-            { value: "react-intl", label: "react-intl / FormatJS" },
-            { value: "next-intl", label: "next-intl" },
-            { value: "rails-i18n", label: "Rails I18n" },
-            { value: "django-i18n", label: "Django i18n" },
+            {
+              value: "i18next",
+              label: "i18next",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["typescript", "javascript"] }],
+            },
+            {
+              value: "react-intl",
+              label: "react-intl / FormatJS",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["typescript", "javascript"] }],
+            },
+            {
+              value: "next-intl",
+              label: "next-intl",
+              compatibleWhen: [{ aspectKey: "framework", fieldId: "framework", values: ["nextjs"] }],
+            },
+            {
+              value: "rails-i18n",
+              label: "Rails I18n",
+              compatibleWhen: [{ aspectKey: "framework", fieldId: "framework", values: ["rails"] }],
+            },
+            {
+              value: "django-i18n",
+              label: "Django i18n",
+              compatibleWhen: [{ aspectKey: "framework", fieldId: "framework", values: ["django"] }],
+            },
             { value: "none", label: "None — single locale only" },
           ],
         },

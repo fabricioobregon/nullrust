@@ -34,7 +34,13 @@ export const dataValidationState: AspectDefinition = {
           options: [
             { value: "react-query", label: "TanStack Query" },
             { value: "swr", label: "SWR" },
-            { value: "rtk-query", label: "RTK Query" },
+            {
+              value: "rtk-query",
+              label: "RTK Query",
+              // RTK Query ships as part of the Redux Toolkit package —
+              // not a general option once client state isn't Redux.
+              compatibleWhen: [{ aspectKey: "data-validation-state", fieldId: "client-state", values: ["redux-toolkit"] }],
+            },
             { value: "framework-native", label: "Framework-native data fetching (e.g. RSC + fetch cache)" },
             { value: "none", label: "None — manual fetch + local state" },
           ],
@@ -52,7 +58,13 @@ export const dataValidationState: AspectDefinition = {
           options: [
             { value: "react-hook-form", label: "React Hook Form" },
             { value: "formik", label: "Formik" },
-            { value: "native-form-actions", label: "Native HTML forms + Server Actions" },
+            {
+              value: "native-form-actions",
+              label: "Native HTML forms + Server Actions",
+              // "Server Actions" specifically names the Next.js/React
+              // App Router feature, not a generic pattern.
+              compatibleWhen: [{ aspectKey: "framework", fieldId: "framework", values: ["nextjs"] }],
+            },
             { value: "tanstack-form", label: "TanStack Form" },
           ],
         },

@@ -26,9 +26,26 @@ export const infrastructure: AspectDefinition = {
           label: "Orchestration / hosting model",
           type: "single",
           options: [
-            { value: "kubernetes", label: "Kubernetes" },
-            { value: "ecs", label: "AWS ECS/Fargate" },
-            { value: "cloud-run", label: "Google Cloud Run" },
+            {
+              value: "kubernetes",
+              label: "Kubernetes",
+              // All three genuinely require a container image — picking
+              // "none — serverless/managed platform" for containerization
+              // and then Kubernetes/ECS/Cloud Run would be contradictory.
+              // serverless-functions/paas/vms stay ungated, so this can
+              // never empty the field out.
+              compatibleWhen: [{ aspectKey: "infrastructure", fieldId: "containerization", values: ["docker", "buildpacks"] }],
+            },
+            {
+              value: "ecs",
+              label: "AWS ECS/Fargate",
+              compatibleWhen: [{ aspectKey: "infrastructure", fieldId: "containerization", values: ["docker", "buildpacks"] }],
+            },
+            {
+              value: "cloud-run",
+              label: "Google Cloud Run",
+              compatibleWhen: [{ aspectKey: "infrastructure", fieldId: "containerization", values: ["docker", "buildpacks"] }],
+            },
             { value: "serverless-functions", label: "Serverless functions (Lambda/Vercel/Workers)" },
             { value: "paas", label: "PaaS (Railway/Render/Heroku)" },
             { value: "vms", label: "Plain VMs" },
@@ -102,7 +119,13 @@ export const infrastructure: AspectDefinition = {
           options: [
             { value: "autoscaling", label: "Autoscaling based on load metrics" },
             { value: "fixed-capacity", label: "Fixed capacity, manually adjusted" },
-            { value: "scale-to-zero", label: "Scale-to-zero serverless" },
+            {
+              value: "scale-to-zero",
+              label: "Scale-to-zero serverless",
+              // Only a real option on a platform that actually does this —
+              // autoscaling/fixed-capacity stay ungated regardless.
+              compatibleWhen: [{ aspectKey: "infrastructure", fieldId: "orchestration", values: ["serverless-functions", "cloud-run"] }],
+            },
           ],
         },
       ],
