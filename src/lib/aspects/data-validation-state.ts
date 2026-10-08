@@ -2,40 +2,15 @@ import { AspectDefinition } from "./types";
 
 export const dataValidationState: AspectDefinition = {
   key: "data-validation-state",
-  title: "Data Validation & State",
+  title: "Frontend State & Forms",
   icon: "✅",
-  tagline: "Schema validation library, frontend state management, and forms.",
-  scope: ["backend", "frontend", "mobile"],
+  tagline: "Frontend state management and forms.",
+  // Schema validation moved to Programming Language's "Type safety &
+  // validation" card — Pydantic *is* both a type system and a validator in
+  // Python, and Zod/TS pairings are decided together in practice, so the
+  // two questions belong next to each other rather than in separate aspects.
+  scope: ["frontend", "mobile"],
   cards: [
-    {
-      id: "validation",
-      title: "Schema validation",
-      fields: [
-        {
-          id: "library",
-          label: "Validation library",
-          type: "single",
-          options: [
-            { value: "zod", label: "Zod" },
-            { value: "yup", label: "Yup" },
-            { value: "joi", label: "Joi" },
-            { value: "pydantic", label: "Pydantic" },
-            { value: "class-validator", label: "class-validator" },
-            { value: "json-schema", label: "Raw JSON Schema" },
-          ],
-        },
-        {
-          id: "validation-scope",
-          label: "Where schemas are shared",
-          type: "single",
-          options: [
-            { value: "shared-frontend-backend", label: "Single shared schema, used on both client and server" },
-            { value: "duplicated", label: "Separate schemas per side, kept manually in sync" },
-            { value: "backend-only", label: "Backend-only validation, frontend trusts UI constraints" },
-          ],
-        },
-      ],
-    },
     {
       id: "state-management",
       title: "Frontend state management",
