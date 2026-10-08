@@ -76,11 +76,14 @@ export function OptionCloud({
   selected,
   fieldId,
   inputType,
+  onValueChange,
 }: {
   options: FieldOption[];
   selected: Set<string>;
   fieldId: string;
   inputType: "radio" | "checkbox";
+  /** Fires with the newly-confirmed value — lets a parent form re-narrow sibling fields live, before saving. */
+  onValueChange?: (value: string) => void;
 }) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const labelRefs = useRef<Array<HTMLLabelElement | null>>([]);
@@ -105,6 +108,14 @@ export function OptionCloud({
   useEffect(() => {
     enhancedRef.current = enhanced;
   }, [enhanced]);
+  // Same mirror-into-ref pattern as enhancedRef: the main effect below only
+  // runs once per options/inputType change, so it can't close over a fresh
+  // onValueChange on every render without re-running (which would tear down
+  // and reinit the WASM instance whenever the parent re-renders).
+  const onValueChangeRef = useRef(onValueChange);
+  useEffect(() => {
+    onValueChangeRef.current = onValueChange;
+  }, [onValueChange]);
 
   const groupClassFor = useMemo(() => {
     const order: string[] = [];
@@ -228,7 +239,10 @@ export function OptionCloud({
       // covers both without making keyboard users wait through a hold they
       // have no way to perform.
       const input = e.target as HTMLInputElement;
-      if (inputType === "radio") setConfirmedValue(input.value);
+      if (inputType === "radio") {
+        setConfirmedValue(input.value);
+        onValueChangeRef.current?.(input.value);
+      }
     }
 
     function tick(time: number) {

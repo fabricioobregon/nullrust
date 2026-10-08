@@ -15,11 +15,14 @@ export function SearchableOptions({
   selected,
   fieldId,
   inputType,
+  onValueChange,
 }: {
   options: FieldOption[];
   selected: Set<string>;
   fieldId: string;
   inputType: "radio" | "checkbox";
+  /** Fires with the field's new value (string for radio, string[] for checkbox) — lets a parent form re-narrow sibling fields live, before saving. */
+  onValueChange?: (value: string | string[]) => void;
 }) {
   // If an already-saved answer is hidden in the collapsed set, start expanded
   // so nothing the user previously chose silently disappears from view.
@@ -45,7 +48,22 @@ export function SearchableOptions({
         />
       )}
 
-      <div className="flex flex-wrap gap-2">
+      <div
+        className="flex flex-wrap gap-2"
+        onChange={(e) => {
+          if (!onValueChange) return;
+          if (inputType === "radio") {
+            onValueChange((e.target as HTMLInputElement).value);
+            return;
+          }
+          // Checkbox group: read the live checked set straight from the DOM
+          // (includes stale-but-still-rendered options too) rather than
+          // tracking a second, parallel piece of React state that could
+          // drift out of sync with it.
+          const inputs = e.currentTarget.querySelectorAll<HTMLInputElement>(`input[name="${fieldId}"]`);
+          onValueChange(Array.from(inputs).filter((i) => i.checked).map((i) => i.value));
+        }}
+      >
         {visible.map((opt) => (
           <label
             key={opt.value}
