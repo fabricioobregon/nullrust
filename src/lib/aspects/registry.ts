@@ -25,35 +25,50 @@ import { analytics } from "./analytics";
 import { backupDisasterRecovery } from "./backup-disaster-recovery";
 import { i18nLocalization } from "./i18n-localization";
 
-// Order controls display order. The first few are deliberately sequenced:
-// they drive compatibleWhen filtering on later aspects' options (see
-// compatibility.ts), so Language/Framework/Database/Testing/Linting come
-// first even though nothing here *enforces* answering them in order.
+// Order controls display order, grouped by how a team would actually move
+// through them — and constrained by compatibleWhen dependencies: an aspect
+// referenced by another aspect's rule must come at or before it (enforced
+// by scripts/verify-registry.ts, not just this comment).
+//
+//  1. Core stack (drives cascading for everything below):
+//     Language -> Framework -> Database.
+//  2. Access & interface — promoted earlier per explicit request: how the
+//     system is reached and secured, right after the stack that decides it.
+//     Auth and Caching both depend on Database (an engine-specific option
+//     each), so this is as early as they can go; API Design has no
+//     dependency but reads naturally alongside them. Security grouped in
+//     for the same reason, even though nothing forces its position.
+//  3. Quality & delivery practices: Testing, Linting, CI/CD, Git workflow.
+//  4. Operations: Observability, Infrastructure, Messaging/jobs, Backup/DR.
+//  5. Frontend-specific: CSS tooling, Frontend state & forms, Accessibility,
+//     i18n.
+//  6. Project hygiene: Package management, Documentation, Privacy/compliance.
+//  7. Product/growth: Feature flags, Analytics.
 export const aspects: AspectDefinition[] = [
   programmingLanguage,
   framework,
   database,
+  auth,
+  apiDesign,
+  caching,
+  security,
   testing,
   lintingFormatting,
-  cssTooling,
   ciCd,
-  observability,
-  apiDesign,
-  auth,
-  security,
   gitWorkflow,
+  observability,
   infrastructure,
-  caching,
   messagingBackgroundJobs,
-  documentation,
+  backupDisasterRecovery,
+  cssTooling,
   dataValidationState,
-  packageManagement,
-  dataPrivacyCompliance,
   accessibility,
+  i18nLocalization,
+  packageManagement,
+  documentation,
+  dataPrivacyCompliance,
   featureFlags,
   analytics,
-  backupDisasterRecovery,
-  i18nLocalization,
 ];
 
 export function getAspect(key: string): AspectDefinition | undefined {
