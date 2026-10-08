@@ -1,11 +1,18 @@
 import { AspectDefinition } from "./types";
 import { LANGUAGE_ICONS } from "@/lib/language-icons";
 
+// Language clusters reused across this file's compatibleWhen rules.
+const STATIC_COMPILER_TYPED = [
+  "c", "cpp", "rust", "go", "swift", "objective-c", "java", "kotlin",
+  "csharp", "scala", "fsharp", "haskell", "dart",
+];
+const UNTYPED_DYNAMIC = ["javascript", "clojure", "lua", "perl", "r", "php", "elixir"];
+
 export const programmingLanguage: AspectDefinition = {
   key: "programming-language",
   title: "Programming Language",
   icon: "💻",
-  tagline: "Primary language, type safety, and style conventions.",
+  tagline: "Primary language, version target, error handling, and type safety.",
   scope: "all",
   cards: [
     {
@@ -67,13 +74,75 @@ export const programmingLanguage: AspectDefinition = {
           ],
         },
         {
-          id: "version-policy",
-          label: "Version support policy",
+          id: "target-version",
+          label: "Target version",
+          type: "text",
+          placeholder: "e.g. Python 3.12, Node 20 LTS / TypeScript 5.5, Go 1.23",
+          description:
+            "The concrete version an AI agent can rely on — bounds which syntax, stdlib APIs, and language features are actually safe to generate.",
+        },
+      ],
+    },
+    {
+      id: "error-handling",
+      title: "Error handling",
+      description:
+        "How failures should flow through generated code — the single highest-leverage decision for an AI agent's control flow, and often skipped when only the language is specified.",
+      fields: [
+        {
+          id: "error-handling-style",
+          label: "Error handling style",
           type: "single",
           options: [
-            { value: "latest-lts", label: "Always track latest LTS" },
-            { value: "pinned", label: "Pinned exact version, upgraded deliberately" },
-            { value: "n-1", label: "Support current and previous major version" },
+            {
+              value: "exceptions",
+              label: "Exceptions (throw / raise / try-catch)",
+              description: "Failures propagate up the call stack until caught — the mainstream default for most OOP/dynamic languages.",
+              recommended: true,
+              compatibleWhen: [
+                {
+                  aspectKey: "programming-language",
+                  fieldId: "language",
+                  values: ["java", "csharp", "python", "ruby", "php", "kotlin", "swift", "javascript", "typescript", "lua", "perl", "r", "clojure"],
+                },
+              ],
+            },
+            {
+              value: "result-type-optional",
+              label: "Result / Either return values",
+              description: "Expected failures are an explicit return value (Result<T,E>, Either, {:ok,_}/{:error,_}), not a thrown exception — reserve panics/exceptions for programmer bugs.",
+              compatibleWhen: [
+                { aspectKey: "programming-language", fieldId: "language", values: ["typescript", "javascript", "kotlin", "swift"] },
+              ],
+            },
+            {
+              value: "result-type",
+              label: "Result / Either return values",
+              description: "Idiomatic here: Result/Either (or tagged {:ok,_}/{:error,_} tuples) for expected failures, panics/exceptions reserved for unrecoverable bugs.",
+              recommended: true,
+              compatibleWhen: [
+                { aspectKey: "programming-language", fieldId: "language", values: ["rust", "scala", "fsharp", "haskell", "elixir"] },
+              ],
+            },
+            {
+              value: "error-value-return",
+              label: "Explicit error-value return (value, err)",
+              description: "Every fallible call returns its error alongside its result and the caller must check it explicitly — the idiomatic, effectively mandatory Go style.",
+              recommended: true,
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["go", "c"] }],
+            },
+            {
+              value: "error-value-return-cpp",
+              label: "Explicit error-value return (error codes)",
+              description: "Error codes / errno-style returns instead of exceptions — still common in performance- or ABI-sensitive C++ code.",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["cpp"] }],
+            },
+            {
+              value: "exceptions-cpp",
+              label: "Exceptions (throw / try-catch)",
+              description: "C++'s other mainstream option — unwinds the stack on failure instead of threading an error code through every return.",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["cpp"] }],
+            },
           ],
         },
       ],
@@ -87,9 +156,14 @@ export const programmingLanguage: AspectDefinition = {
           label: "Type-checking strictness",
           type: "single",
           options: [
-            { value: "strict", label: "Strict mode, no implicit any / no untyped code" },
-            { value: "moderate", label: "Moderate — strict on new code, loose on legacy" },
-            { value: "none", label: "No static typing enforced" },
+            {
+              value: "strict",
+              label: "Strict mode, no implicit any / no untyped code",
+              description: "Fewest type-related mistakes an AI agent can introduce silently — the safer default for a codebase agents actively write in.",
+              recommended: true,
+            },
+            { value: "moderate", label: "Moderate — strict on new code, loose on legacy", description: "Common migration posture for an existing codebase adopting stricter typing gradually." },
+            { value: "none", label: "No static typing enforced", description: "Relies entirely on tests and review to catch type errors." },
           ],
         },
         {
@@ -97,10 +171,50 @@ export const programmingLanguage: AspectDefinition = {
           label: "Type-checking tooling",
           type: "multi",
           options: [
-            { value: "tsc", label: "tsc (TypeScript compiler)" },
-            { value: "mypy", label: "mypy" },
-            { value: "pyright", label: "pyright" },
-            { value: "sorbet", label: "Sorbet" },
+            {
+              value: "tsc",
+              label: "tsc (TypeScript compiler)",
+              description: "TypeScript's own compiler in --noEmit mode is the type checker; no separate tool needed.",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["typescript"] }],
+            },
+            {
+              value: "mypy",
+              label: "mypy",
+              description: "The long-standing standard — broadest ecosystem support for stubs and framework plugins (Django, etc.).",
+              recommended: true,
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["python"] }],
+            },
+            {
+              value: "pyright",
+              label: "pyright",
+              description: "Faster, Microsoft-maintained — what VS Code's Pylance runs under the hood.",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["python"] }],
+            },
+            {
+              value: "sorbet",
+              label: "Sorbet",
+              description: "Gradual typing for Ruby with the most mature tooling and editor support.",
+              recommended: true,
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["ruby"] }],
+            },
+            {
+              value: "rbs-steep",
+              label: "RBS + Steep",
+              description: "Ruby's own type-signature format plus a checker — less tooling maturity than Sorbet, no runtime dependency.",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["ruby"] }],
+            },
+            {
+              value: "compiler-builtin",
+              label: "Compiler enforces types (no separate tool needed)",
+              description: "This language's own compiler is the type checker — there's no separate tool to pick.",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: STATIC_COMPILER_TYPED }],
+            },
+            {
+              value: "untyped-dynamic",
+              label: "No static type checker in use",
+              description: "No mainstream static type checker for this language/ecosystem is in use on this project.",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: UNTYPED_DYNAMIC }],
+            },
           ],
         },
       ],
@@ -110,24 +224,111 @@ export const programmingLanguage: AspectDefinition = {
       title: "Style & idioms",
       fields: [
         {
-          id: "naming-case",
-          label: "Variable / function naming",
-          type: "single",
-          options: [
-            { value: "camelCase", label: "camelCase" },
-            { value: "snake_case", label: "snake_case" },
-          ],
-        },
-        {
           id: "patterns",
           label: "Patterns to adopt",
           type: "multi",
           options: [
-            { value: "functional-first", label: "Prefer functional/immutable style over classes" },
-            { value: "no-any", label: "Disallow escape hatches (any, ts-ignore) without justification" },
-            { value: "explicit-return-types", label: "Explicit return types on exported functions" },
-            { value: "no-default-exports", label: "Named exports only, no default exports" },
-            { value: "early-returns", label: "Early returns over nested conditionals" },
+            { value: "functional-first", label: "Prefer functional/immutable style over classes", description: "Favor pure functions and immutable data over mutable object state where the language allows it." },
+            { value: "early-returns", label: "Early returns over nested conditionals", description: "Flattens control flow — generally easier for both humans and agents to follow.", recommended: true },
+            {
+              value: "no-any",
+              label: "Disallow escape hatches (any, ts-ignore) without justification",
+              description: "Require a comment explaining why whenever a type-safety escape hatch is used.",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["typescript"] }],
+            },
+            {
+              value: "explicit-return-types",
+              label: "Explicit return type annotations on exported/public functions",
+              description: "Don't rely on inference at a module's public boundary, even where the language allows it.",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["typescript", "python", "kotlin"] }],
+            },
+            {
+              value: "no-default-exports",
+              label: "Named exports only, no default exports",
+              description: "Keeps imports consistent and renames traceable across the codebase.",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["typescript", "javascript"] }],
+            },
+            {
+              value: "type-hints-everywhere",
+              label: "Type hints on all public functions/methods",
+              description: "PEP 484 annotations at every public boundary, even with strictness set to moderate.",
+              recommended: true,
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["python"] }],
+            },
+            {
+              value: "dataclasses-over-dicts",
+              label: "Dataclasses/Pydantic models over raw dicts",
+              description: "Structured data gets a real type instead of being passed around as an untyped dict.",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["python"] }],
+            },
+            {
+              value: "context-managers",
+              label: "Context managers for resource cleanup",
+              description: "`with` blocks instead of manual try/finally for anything that needs closing or releasing.",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["python"] }],
+            },
+            {
+              value: "accept-interfaces-return-structs",
+              label: "Accept interfaces, return concrete structs",
+              description: "Keeps function signatures flexible for callers and concrete for implementers — idiomatic Go.",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["go"] }],
+            },
+            {
+              value: "wrap-errors",
+              label: "Wrap errors with context (fmt.Errorf(\"...: %w\", err))",
+              description: "Preserve the original error while adding what the caller needs to debug it.",
+              recommended: true,
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["go"] }],
+            },
+            {
+              value: "no-naked-returns",
+              label: "No naked returns in functions longer than a few lines",
+              description: "Named return values should still be returned explicitly once a function has any real length.",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["go"] }],
+            },
+            {
+              value: "prefer-iterators",
+              label: "Prefer iterator chains over manual index loops",
+              description: "map/filter/fold-style chains over hand-rolled `for` loops with manual indices.",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["rust"] }],
+            },
+            {
+              value: "no-unwrap-in-prod",
+              label: "No .unwrap()/.expect() on paths reachable in production",
+              description: "Propagate or handle the error instead — reserve unwrap/expect for tests and truly-impossible states.",
+              recommended: true,
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["rust"] }],
+            },
+            {
+              value: "newtype-pattern",
+              label: "Newtypes over primitive obsession",
+              description: "Wrap bare String/u64/etc. in a distinct type when it represents a specific concept (UserId, not u64).",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["rust"] }],
+            },
+            {
+              value: "immutable-data-classes",
+              label: "Immutable data classes/records over mutable POJOs",
+              description: "Prefer Java records / Kotlin data classes with val properties over classic mutable beans.",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["java", "kotlin"] }],
+            },
+            {
+              value: "avoid-null-use-optional",
+              label: "Avoid returning null; use Optional<T> / nullable types explicitly",
+              description: "Makes absence part of the type signature instead of an undocumented possibility.",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["java", "kotlin"] }],
+            },
+            {
+              value: "nullable-reference-types",
+              label: "Nullable reference types enabled project-wide",
+              description: "`<Nullable>enable</Nullable>` so the compiler tracks nullability instead of leaving it undocumented.",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["csharp"] }],
+            },
+            {
+              value: "guard-over-nested-if",
+              label: "Guard statements for early exits over nested if-let",
+              description: "`guard let ... else { return }` instead of pyramids of nested optional-unwrapping.",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["swift"] }],
+            },
           ],
         },
       ],
