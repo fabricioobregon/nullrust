@@ -7,7 +7,7 @@ import { saveAspectAnswers } from "@/lib/preferences";
 import { getAspect, isAspectInRepoScope } from "@/lib/aspects/registry";
 import { cleanupIncompatibleAnswers } from "@/lib/aspects/cleanup";
 import { AspectAnswers } from "@/lib/aspects/types";
-import { RepoKey, isRepoKey } from "@/lib/repos";
+import { isRepoKind } from "@/lib/repos";
 
 export async function createProject(formData: FormData) {
   const name = String(formData.get("name") ?? "").trim();
@@ -23,18 +23,28 @@ export async function deleteProject(projectId: string) {
   redirect("/");
 }
 
-export async function saveAspect(
-  projectId: string,
-  repoKey: RepoKey,
-  aspectKey: string,
-  formData: FormData
-) {
-  if (!isRepoKey(repoKey)) throw new Error(`Unknown repo: ${repoKey}`);
+export async function createRepo(projectId: string, formData: FormData) {
+  const name = String(formData.get("name") ?? "").trim();
+  const kind = String(formData.get("kind") ?? "");
+  if (!name) throw new Error("Repo name is required");
+  if (!isRepoKind(kind)) throw new Error(`Unknown repo kind: ${kind}`);
+
+  const project = await db.project.findUnique({ where: { id: projectId } });
+  if (!project) throw new Error(`Unknown project: ${projectId}`);
+
+  const repo = await db.repo.create({ data: { projectId, name, kind } });
+  revalidatePath(`/projects/${projectId}`);
+  redirect(`/projects/${projectId}/repos/${repo.id}`);
+}
+
+export async function saveAspect(repoId: string, aspectKey: string, formData: FormData) {
+  const repo = await db.repo.findUnique({ where: { id: repoId } });
+  if (!repo || !isRepoKind(repo.kind)) throw new Error(`Unknown repo: ${repoId}`);
 
   const aspect = getAspect(aspectKey);
   if (!aspect) throw new Error(`Unknown aspect: ${aspectKey}`);
-  if (!isAspectInRepoScope(aspect, repoKey)) {
-    throw new Error(`Aspect "${aspectKey}" is not in scope for repo "${repoKey}"`);
+  if (!isAspectInRepoScope(aspect, repo.kind)) {
+    throw new Error(`Aspect "${aspectKey}" is not in scope for repo kind "${repo.kind}"`);
   }
 
   const answers: AspectAnswers = {};
@@ -50,16 +60,16 @@ export async function saveAspect(
     }
   }
 
-  await saveAspectAnswers(projectId, repoKey, aspectKey, answers);
+  await saveAspectAnswers(repo.projectId, repoId, aspectKey, answers);
 
   // This save may have made some other, already-saved field's value
   // incompatible (e.g. changing Language away from Python strands a saved
   // Framework = Django) — clear those out instead of leaving stale,
   // no-longer-valid selections sitting in the database.
-  const cleared = await cleanupIncompatibleAnswers(projectId, repoKey);
+  const cleared = await cleanupIncompatibleAnswers(repo.projectId, repoId, repo.kind);
 
-  revalidatePath(`/projects/${projectId}/repos/${repoKey}`);
-  revalidatePath(`/projects/${projectId}/repos/${repoKey}/aspects/${aspectKey}`);
+  revalidatePath(`/projects/${repo.projectId}/repos/${repoId}`);
+  revalidatePath(`/projects/${repo.projectId}/repos/${repoId}/aspects/${aspectKey}`);
 
   const params = new URLSearchParams({ saved: aspectKey });
   if (cleared.length > 0) {
@@ -68,5 +78,5 @@ export async function saveAspect(
       cleared.map((c) => `${c.aspectTitle} → ${c.fieldLabel}: ${c.clearedLabels.join(", ")}`).join("; ")
     );
   }
-  redirect(`/projects/${projectId}/repos/${repoKey}?${params.toString()}`);
+  redirect(`/projects/${repo.projectId}/repos/${repoId}?${params.toString()}`);
 }

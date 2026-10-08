@@ -13,9 +13,10 @@ export default async function HomePage() {
       <div>
         <h1 className="text-2xl font-semibold">Your projects</h1>
         <p className="mt-1 text-slate-600">
-          Each project holds the stack choices and conventions for one repo. Configure it once,
-          then generate an <code className="rounded bg-slate-200 px-1">AGENTS.md</code> to guard-rail
-          any coding agent working in it.
+          A project groups the repos that make up one system &mdash; add infra, backend, frontend,
+          mobile, or other repos as needed. Configure each one once, then generate an{" "}
+          <code className="rounded bg-slate-200 px-1">AGENTS.md</code> to guard-rail any coding agent
+          working in it.
         </p>
       </div>
 

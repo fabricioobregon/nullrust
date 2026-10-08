@@ -1,4 +1,4 @@
-import { RepoKey } from "@/lib/repos";
+import { RepoKind } from "@/lib/repos";
 import { getRepoAnswers, saveAspectAnswers } from "@/lib/preferences";
 import { aspectsForRepo } from "./registry";
 import { isValueCompatible } from "./compatibility";
@@ -25,15 +25,16 @@ export type ClearedAnswer = {
  */
 export async function cleanupIncompatibleAnswers(
   projectId: string,
-  repoKey: RepoKey
+  repoId: string,
+  repoKind: RepoKind
 ): Promise<ClearedAnswer[]> {
   const cleared: ClearedAnswer[] = [];
 
   for (let pass = 0; pass < 4; pass++) {
-    const answers = await getRepoAnswers(projectId, repoKey);
+    const answers = await getRepoAnswers(repoId);
     let changedThisPass = false;
 
-    for (const aspect of aspectsForRepo(repoKey)) {
+    for (const aspect of aspectsForRepo(repoKind)) {
       const aspectAnswers = answers[aspect.key];
       if (!aspectAnswers) continue;
 
@@ -49,16 +50,16 @@ export async function cleanupIncompatibleAnswers(
           if (current === undefined) continue;
 
           if (Array.isArray(current)) {
-            const kept = current.filter((v) => isValueCompatible(field, v, answers, repoKey));
+            const kept = current.filter((v) => isValueCompatible(field, v, answers, repoKind));
             if (kept.length !== current.length) {
               const removedLabels = current
-                .filter((v) => !isValueCompatible(field, v, answers, repoKey))
+                .filter((v) => !isValueCompatible(field, v, answers, repoKind))
                 .map((v) => field.options?.find((o) => o.value === v)?.label ?? v);
               cleared.push({ aspectTitle: aspect.title, fieldLabel: field.label, clearedLabels: removedLabels });
               updated[field.id] = kept.length > 0 ? kept : undefined;
               aspectChanged = true;
             }
-          } else if (!isValueCompatible(field, current, answers, repoKey)) {
+          } else if (!isValueCompatible(field, current, answers, repoKind)) {
             const removedLabel = field.options?.find((o) => o.value === current)?.label ?? current;
             cleared.push({ aspectTitle: aspect.title, fieldLabel: field.label, clearedLabels: [removedLabel] });
             updated[field.id] = undefined;
@@ -68,7 +69,7 @@ export async function cleanupIncompatibleAnswers(
       }
 
       if (aspectChanged) {
-        await saveAspectAnswers(projectId, repoKey, aspect.key, updated);
+        await saveAspectAnswers(projectId, repoId, aspect.key, updated);
         changedThisPass = true;
       }
     }

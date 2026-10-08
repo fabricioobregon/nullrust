@@ -3,41 +3,43 @@ import { db } from "@/lib/db";
 import { getRepoAnswers } from "@/lib/preferences";
 import { generateAgentsMd } from "@/lib/generate-agents-md";
 import { CopyButton } from "@/components/copy-button";
-import { getRepo, isRepoKey } from "@/lib/repos";
+import { isRepoKind } from "@/lib/repos";
 
 export const dynamic = "force-dynamic";
 
 export default async function GeneratePage({
   params,
 }: {
-  params: Promise<{ projectId: string; repoKey: string }>;
+  params: Promise<{ projectId: string; repoId: string }>;
 }) {
-  const { projectId, repoKey } = await params;
-  if (!isRepoKey(repoKey)) notFound();
+  const { projectId, repoId } = await params;
 
-  const project = await db.project.findUnique({ where: { id: projectId } });
-  if (!project) notFound();
+  const [project, repo] = await Promise.all([
+    db.project.findUnique({ where: { id: projectId } }),
+    db.repo.findUnique({ where: { id: repoId } }),
+  ]);
+  if (!project || !repo || repo.projectId !== projectId) notFound();
+  if (!isRepoKind(repo.kind)) notFound();
 
-  const repo = getRepo(repoKey)!;
-  const answers = await getRepoAnswers(projectId, repoKey);
-  const markdown = generateAgentsMd(project.name, repoKey, repo.title, answers);
+  const answers = await getRepoAnswers(repoId);
+  const markdown = generateAgentsMd(repo.name, repo.kind, answers);
   const downloadHref = `data:text/markdown;charset=utf-8,${encodeURIComponent(markdown)}`;
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <div>
         <a
-          href={`/projects/${projectId}/repos/${repoKey}`}
+          href={`/projects/${projectId}/repos/${repoId}`}
           className="text-sm text-slate-500 hover:text-slate-700"
         >
-          &larr; {project.name} / {repo.title}
+          &larr; {project.name} / {repo.name}
         </a>
         <h1 className="mt-1 text-2xl font-semibold">
-          Generated AGENTS.md &mdash; {repo.title}
+          Generated AGENTS.md &mdash; {repo.name}
         </h1>
         <p className="mt-1 text-slate-600">
           Copy this into an <code className="rounded bg-slate-200 px-1">AGENTS.md</code> file at the
-          root of the <span className="font-medium">{repo.title.toLowerCase()}</span> repo, or download it directly.
+          root of the <span className="font-medium">{repo.name}</span> repo, or download it directly.
         </p>
       </div>
 

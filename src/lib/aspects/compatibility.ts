@@ -1,6 +1,6 @@
 import { AspectAnswers, AspectField, FieldOption } from "./types";
 import { getAspect } from "./registry";
-import { RepoKey } from "@/lib/repos";
+import { RepoKind } from "@/lib/repos";
 
 /** All aspects' saved answers for one repo, keyed by aspect key. */
 export type RepoAnswers = Record<string, AspectAnswers>;
@@ -54,11 +54,11 @@ function ruleAllows(rule: FieldOption["compatibleWhen"], answers: RepoAnswers): 
 export function compatibleOptions(
   field: AspectField,
   answers: RepoAnswers,
-  repoKey: RepoKey
+  repoKind: RepoKind
 ): FieldOption[] {
   if (!field.options) return [];
 
-  const repoFiltered = field.options.filter((opt) => !opt.repos || opt.repos.includes(repoKey));
+  const repoFiltered = field.options.filter((opt) => !opt.repos || opt.repos.includes(repoKind));
   const base = repoFiltered.length > 0 ? repoFiltered : field.options;
 
   const anyUpstreamAnswered = referencedFields(field).some((r) => isAnswered(answers, r.aspectKey, r.fieldId));
@@ -82,11 +82,11 @@ export function isValueCompatible(
   field: AspectField,
   value: string,
   answers: RepoAnswers,
-  repoKey: RepoKey
+  repoKind: RepoKind
 ): boolean {
   const opt = field.options?.find((o) => o.value === value);
   if (!opt) return false;
-  if (opt.repos && !opt.repos.includes(repoKey)) return false;
+  if (opt.repos && !opt.repos.includes(repoKind)) return false;
   return ruleAllows(opt.compatibleWhen, answers);
 }
 
@@ -98,12 +98,12 @@ export function isValueCompatible(
 export function narrowingReasons(
   field: AspectField,
   answers: RepoAnswers,
-  repoKey: RepoKey,
+  repoKind: RepoKind,
   repoTitle: string
 ): string[] {
   const reasons: string[] = [];
 
-  const repoFilteredCount = (field.options ?? []).filter((opt) => !opt.repos || opt.repos.includes(repoKey)).length;
+  const repoFilteredCount = (field.options ?? []).filter((opt) => !opt.repos || opt.repos.includes(repoKind)).length;
   if (repoFilteredCount < (field.options?.length ?? 0)) reasons.push(`this repo (${repoTitle})`);
 
   for (const { aspectKey, fieldId } of referencedFields(field)) {

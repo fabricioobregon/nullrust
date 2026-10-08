@@ -1,4 +1,4 @@
-import { RepoKey } from "@/lib/repos";
+import { RepoKind } from "@/lib/repos";
 
 /**
  * An option is only offered when the referenced field (elsewhere in the same
@@ -27,7 +27,7 @@ export type FieldOption = {
    * compatibleWhen — it's enforced unconditionally and never relaxed by the
    * "show everything" fallback that compatibleWhen uses for rule gaps.
    */
-  repos?: RepoKey[];
+  repos?: RepoKind[];
   /** Relative visual size when the field's `display` is "cloud". Default "md". */
   weight?: "xl" | "lg" | "md" | "sm";
   /**
@@ -75,7 +75,7 @@ export type AspectDefinition = {
   icon: string;
   tagline: string;
   /** Which repo(s) this aspect applies to. "all" shows it under every repo tab. */
-  scope: RepoKey[] | "all";
+  scope: RepoKind[] | "all";
   cards: AspectCard[];
 };
 

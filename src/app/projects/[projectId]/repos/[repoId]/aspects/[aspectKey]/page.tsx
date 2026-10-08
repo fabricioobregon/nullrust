@@ -5,7 +5,7 @@ import { getRepoAnswers } from "@/lib/preferences";
 import { saveAspect } from "@/app/actions";
 import { AspectField, FieldOption } from "@/lib/aspects/types";
 import { compatibleOptions, narrowingReasons, RepoAnswers } from "@/lib/aspects/compatibility";
-import { RepoKey, getRepo, isRepoKey } from "@/lib/repos";
+import { RepoKind, getRepoKind, isRepoKind } from "@/lib/repos";
 import { OptionCloud } from "@/components/option-cloud";
 import { SearchableOptions } from "@/components/searchable-options";
 
@@ -15,13 +15,13 @@ function Field({
   field,
   value,
   repoAnswers,
-  repoKey,
+  repoKind,
   repoTitle,
 }: {
   field: AspectField;
   value: string | string[] | undefined;
   repoAnswers: RepoAnswers;
-  repoKey: RepoKey;
+  repoKind: RepoKind;
   repoTitle: string;
 }) {
   if (field.type === "text") {
@@ -48,14 +48,14 @@ function Field({
   // Narrow to compatible options, but never drop an already-selected value from
   // view just because an upstream answer changed after the fact — it stays
   // visible (and still saved) until the user picks something else.
-  const filtered = compatibleOptions(field, repoAnswers, repoKey);
+  const filtered = compatibleOptions(field, repoAnswers, repoKind);
   const stale = (field.options ?? []).filter(
     (o) => selected.has(o.value) && !filtered.some((f) => f.value === o.value)
   );
   const displayOptions: FieldOption[] = [...filtered, ...stale];
   const reasons =
     filtered.length < (field.options?.length ?? 0)
-      ? narrowingReasons(field, repoAnswers, repoKey, repoTitle)
+      ? narrowingReasons(field, repoAnswers, repoKind, repoTitle)
       : [];
 
   return (
@@ -87,30 +87,33 @@ function Field({
 export default async function AspectPage({
   params,
 }: {
-  params: Promise<{ projectId: string; repoKey: string; aspectKey: string }>;
+  params: Promise<{ projectId: string; repoId: string; aspectKey: string }>;
 }) {
-  const { projectId, repoKey, aspectKey } = await params;
-  if (!isRepoKey(repoKey)) notFound();
+  const { projectId, repoId, aspectKey } = await params;
 
-  const [project, aspect] = await Promise.all([
+  const [project, repo, aspect] = await Promise.all([
     db.project.findUnique({ where: { id: projectId } }),
+    db.repo.findUnique({ where: { id: repoId } }),
     Promise.resolve(getAspect(aspectKey)),
   ]);
-  if (!project || !aspect || !isAspectInRepoScope(aspect, repoKey)) notFound();
+  if (!project || !repo || repo.projectId !== projectId) notFound();
+  if (!isRepoKind(repo.kind)) notFound();
+  const repoKind = repo.kind;
+  if (!aspect || !isAspectInRepoScope(aspect, repoKind)) notFound();
 
-  const repo = getRepo(repoKey)!;
-  const repoAnswers = await getRepoAnswers(projectId, repoKey);
+  const kind = getRepoKind(repoKind)!;
+  const repoAnswers = await getRepoAnswers(repoId);
   const answers = repoAnswers[aspectKey] ?? {};
-  const action = saveAspect.bind(null, projectId, repoKey, aspectKey);
+  const action = saveAspect.bind(null, repoId, aspectKey);
 
   return (
     <div className="mx-auto max-w-3xl space-y-8">
       <div>
         <a
-          href={`/projects/${projectId}/repos/${repoKey}`}
+          href={`/projects/${projectId}/repos/${repoId}`}
           className="text-sm text-slate-500 hover:text-slate-700"
         >
-          &larr; {project.name} / {repo.title}
+          &larr; {project.name} / {repo.name}
         </a>
         <h1 className="mt-1 flex items-center gap-2 text-2xl font-semibold">
           <span>{aspect.icon}</span> {aspect.title}
@@ -134,8 +137,8 @@ export default async function AspectPage({
                 field={field}
                 value={answers[field.id]}
                 repoAnswers={repoAnswers}
-                repoKey={repoKey}
-                repoTitle={repo.title}
+                repoKind={repoKind}
+                repoTitle={kind.title}
               />
             ))}
           </div>

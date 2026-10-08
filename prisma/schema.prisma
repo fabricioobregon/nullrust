@@ -11,28 +11,47 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// A project is split into repos (infra/backend/frontend/mobile, see
-// src/lib/repos.ts), each of which generates its own AGENTS.md.
+// A project is a collection of repos the user adds as needed (infra,
+// backend, frontend, mobile, or other — see src/lib/repos.ts for the kind
+// list). Each repo generates its own AGENTS.md.
 model Project {
   id          String             @id @default(cuid())
   name        String
   createdAt   DateTime           @default(now())
   updatedAt   DateTime           @updatedAt
   preferences AspectPreference[]
+  repos       Repo[]
 }
 
-// One row per (project, repo, aspect) - e.g. project X's "backend" repo's
-// "database" choices. `data` is a JSON blob keyed by field id from that
-// aspect's registry definition, so adding a new field to an aspect never
-// requires a migration. repoKey matches a key in src/lib/repos.ts.
-model AspectPreference {
-  id         String   @id @default(cuid())
-  projectId  String
-  repoKey    String
-  aspectKey  String
-  data       String // JSON-encoded Record<string, string | string[]>
-  updatedAt  DateTime @updatedAt
-  project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+// One repo added under a project, e.g. "checkout-api" (kind: backend).
+// `kind` matches a key in src/lib/repos.ts and drives which aspects/options
+// apply (see aspectsForRepo / compatibleOptions), not the repo's identity.
+model Repo {
+  id          String             @id @default(cuid())
+  projectId   String
+  name        String
+  kind        String
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  project     Project            @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  preferences AspectPreference[]
 
-  @@unique([projectId, repoKey, aspectKey])
+  @@index([projectId])
+}
+
+// One row per (repo, aspect) - e.g. the "checkout-api" repo's "database"
+// choices. `data` is a JSON blob keyed by field id from that aspect's
+// registry definition, so adding a new field to an aspect never requires a
+// migration.
+model AspectPreference {
+  id        String   @id @default(cuid())
+  projectId String
+  repoId    String
+  aspectKey String
+  data      String // JSON-encoded Record<string, string | string[]>
+  updatedAt DateTime @updatedAt
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  repo      Repo     @relation(fields: [repoId], references: [id], onDelete: Cascade)
+
+  @@unique([repoId, aspectKey])
 }
