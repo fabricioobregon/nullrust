@@ -1,5 +1,11 @@
 import { AspectDefinition } from "./types";
 
+// ORMs/query builders below that only ever target relational databases —
+// used to gate them out for a document/key-value engine pick. Not applied
+// to every SQL-focused option (e.g. TypeORM and Prisma both have real,
+// if less common, MongoDB support) — only ones with no such path at all.
+const RELATIONAL_ENGINES = ["postgresql", "mysql", "sqlite", "sqlserver", "cockroachdb", "planetscale"];
+
 export const database: AspectDefinition = {
   key: "database",
   title: "Database",
@@ -55,7 +61,10 @@ export const database: AspectDefinition = {
               value: "drizzle",
               label: "Drizzle ORM",
               description: "SQL-like, lightweight, no code generation step.",
-              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["typescript", "javascript"] }],
+              compatibleWhen: [
+                { aspectKey: "programming-language", fieldId: "language", values: ["typescript", "javascript"] },
+                { aspectKey: "database", fieldId: "engine", values: RELATIONAL_ENGINES },
+              ],
             },
             {
               value: "typeorm",
@@ -67,20 +76,29 @@ export const database: AspectDefinition = {
               value: "sequelize",
               label: "Sequelize",
               description: "Older, mature ORM — large ecosystem, more verbose API.",
-              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["typescript", "javascript"] }],
+              compatibleWhen: [
+                { aspectKey: "programming-language", fieldId: "language", values: ["typescript", "javascript"] },
+                { aspectKey: "database", fieldId: "engine", values: RELATIONAL_ENGINES },
+              ],
             },
             {
               value: "knex",
               label: "Knex (query builder)",
               description: "Query builder, not a full ORM — closer to hand-written SQL with a nicer API.",
-              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["typescript", "javascript"] }],
+              compatibleWhen: [
+                { aspectKey: "programming-language", fieldId: "language", values: ["typescript", "javascript"] },
+                { aspectKey: "database", fieldId: "engine", values: RELATIONAL_ENGINES },
+              ],
             },
             {
               value: "sqlalchemy",
               label: "SQLAlchemy",
               description: "The standard for Python — works with or without an ORM layer on top.",
               recommended: true,
-              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["python"] }],
+              compatibleWhen: [
+                { aspectKey: "programming-language", fieldId: "language", values: ["python"] },
+                { aspectKey: "database", fieldId: "engine", values: RELATIONAL_ENGINES },
+              ],
             },
             {
               value: "django-orm",
@@ -97,13 +115,24 @@ export const database: AspectDefinition = {
               value: "activerecord",
               label: "ActiveRecord",
               description: "Rails' built-in ORM — convention-driven, minimal config.",
-              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["ruby"] }],
+              compatibleWhen: [
+                { aspectKey: "programming-language", fieldId: "language", values: ["ruby"] },
+                { aspectKey: "database", fieldId: "engine", values: RELATIONAL_ENGINES },
+              ],
             },
             {
               value: "mongoose",
               label: "Mongoose",
               description: "Schema layer for MongoDB — validation and modeling on top of a flexible store.",
-              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["typescript", "javascript"] }],
+              // Two-level cascade, same pattern as django-orm below: a
+              // TS/JS project isn't enough on its own — Mongoose is a
+              // MongoDB-specific library, so the chosen engine must be
+              // MongoDB too, or this makes no sense (e.g. PostgreSQL + TS
+              // previously still showed Mongoose as "compatible").
+              compatibleWhen: [
+                { aspectKey: "programming-language", fieldId: "language", values: ["typescript", "javascript"] },
+                { aspectKey: "database", fieldId: "engine", values: ["mongodb"] },
+              ],
             },
             {
               value: "raw-sql",
