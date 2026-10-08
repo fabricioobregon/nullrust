@@ -4,7 +4,7 @@ export const caching: AspectDefinition = {
   key: "caching",
   title: "Caching",
   icon: "⚡",
-  tagline: "Caching layers, invalidation strategy, and session storage.",
+  tagline: "Caching layers and invalidation strategy.",
   scope: ["backend", "infra"],
   cards: [
     {
@@ -61,23 +61,6 @@ export const caching: AspectDefinition = {
             { value: "stale-while-revalidate", label: "Stale-while-revalidate for read-heavy endpoints" },
             { value: "cache-key-includes-version", label: "Cache keys include a schema/version component" },
             { value: "no-caching-sensitive-data", label: "Never cache personally-identifiable or per-user sensitive data at shared layers" },
-          ],
-        },
-      ],
-    },
-    {
-      id: "session-storage",
-      title: "Session & state storage",
-      fields: [
-        {
-          id: "session-store",
-          label: "Where session/state lives",
-          type: "single",
-          options: [
-            { value: "redis-session", label: "Redis-backed session store" },
-            { value: "signed-cookie", label: "Signed/encrypted cookie, no server-side store" },
-            { value: "db-session", label: "Database-backed session table" },
-            { value: "jwt-stateless", label: "Stateless JWT, no server-side session" },
           ],
         },
       ],

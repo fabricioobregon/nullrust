@@ -30,10 +30,36 @@ export const auth: AspectDefinition = {
           id: "session-strategy",
           label: "Session strategy",
           type: "single",
+          // Covers both the strategy and where it's physically stored in one
+          // field — these used to be two separate, inconsistently-worded
+          // questions split across this aspect and Caching's "Session &
+          // state storage" card (merged here; see caching.ts's history).
           options: [
-            { value: "server-session", label: "Server-side session (DB/Redis-backed)" },
-            { value: "jwt", label: "Stateless JWT" },
-            { value: "jwt-refresh", label: "JWT access token + refresh token rotation" },
+            {
+              value: "jwt-stateless",
+              label: "Stateless JWT, no server-side session",
+              description: "Nothing to store or revoke server-side — scales trivially, but a token can't be invalidated before it expires.",
+            },
+            {
+              value: "jwt-refresh",
+              label: "JWT access token + refresh token rotation",
+              description: "Short-lived access token plus a longer-lived refresh token — bounds how long a stolen access token stays valid.",
+            },
+            {
+              value: "server-session-redis",
+              label: "Server-side session, Redis-backed",
+              description: "Sessions can be revoked instantly and inspected server-side; Redis keeps lookups fast under load.",
+            },
+            {
+              value: "server-session-db",
+              label: "Server-side session, database-backed",
+              description: "Same revocability as Redis-backed sessions, no extra infra dependency, at the cost of a DB round-trip per request.",
+            },
+            {
+              value: "signed-cookie",
+              label: "Signed/encrypted cookie, no server-side store",
+              description: "Session data lives in the cookie itself, tamper-proofed by a signature — no server-side store, but size-limited and not instantly revocable.",
+            },
           ],
         },
         {
