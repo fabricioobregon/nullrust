@@ -77,6 +77,7 @@ export function OptionCloud({
   fieldId,
   inputType,
   onValueChange,
+  value,
 }: {
   options: FieldOption[];
   selected: Set<string>;
@@ -84,6 +85,14 @@ export function OptionCloud({
   inputType: "radio" | "checkbox";
   /** Fires with the newly-confirmed value — lets a parent form re-narrow sibling fields live, before saving. */
   onValueChange?: (value: string) => void;
+  /**
+   * The authoritative current value, if the parent wants to veto a pick
+   * (e.g. a "this will clear X, continue?" prompt the user declined).
+   * When this differs from the pick the hold-to-confirm gesture already
+   * applied internally, the cloud reverts its own display and the
+   * underlying radio input back to it. Omit for uncontrolled use.
+   */
+  value?: string;
 }) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const labelRefs = useRef<Array<HTMLLabelElement | null>>([]);
@@ -116,6 +125,25 @@ export function OptionCloud({
   useEffect(() => {
     onValueChangeRef.current = onValueChange;
   }, [onValueChange]);
+  // Reverts a pick the parent declined to commit (e.g. the user cancelled a
+  // "this will clear X" prompt). The hold-to-confirm gesture and keyboard
+  // navigation both already set `checked` on the DOM input directly and
+  // update `confirmedValue` internally the instant they happen — before the
+  // parent has a chance to veto — so undoing that needs to reach back into
+  // the DOM the same way, not just React state. This genuinely needs to
+  // react to either side drifting — `value` (a prop change) or
+  // `confirmedValue` (the gesture's own internal update) — not just "a prop
+  // changed", so the usual render-phase state-adjustment pattern doesn't
+  // fit; this is synchronizing against the external DOM input exactly as
+  // react-hooks/set-state-in-effect's own description calls a valid effect.
+  useEffect(() => {
+    if (value === undefined || value === confirmedValue) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setConfirmedValue(value);
+    const idx = options.findIndex((o) => o.value === value);
+    const input = idx >= 0 ? inputRefs.current[idx] : null;
+    if (input) input.checked = true;
+  }, [value, confirmedValue, options]);
 
   const groupClassFor = useMemo(() => {
     const order: string[] = [];
