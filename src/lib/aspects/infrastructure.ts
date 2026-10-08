@@ -73,6 +73,10 @@ export const infrastructure: AspectDefinition = {
           id: "environment-tiers",
           label: "Environment tiers",
           type: "multi",
+          // Same vocabulary as CI/CD's "Environment pipeline" field —
+          // kept as a separate answer (this one's infra-only scoped; CI/CD
+          // is scope: "all" and needs its own even with no infra repo in
+          // the project) but worded identically so they can't drift.
           options: [
             { value: "local", label: "local" },
             { value: "dev", label: "dev" },

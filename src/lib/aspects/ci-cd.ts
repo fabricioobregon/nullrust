@@ -80,10 +80,16 @@ export const ciCd: AspectDefinition = {
           id: "environments",
           label: "Environment pipeline",
           type: "multi",
+          // Same tier vocabulary as Infrastructure's "Environment tiers"
+          // field — kept as its own answer (not a reference to Infra's)
+          // since a repo can have its own pipeline without an infra repo
+          // existing in the project at all, but worded identically so the
+          // two don't silently drift (this used to say "preview" here and
+          // "ephemeral-per-pr" there for the same thing).
           options: [
             { value: "dev", label: "dev" },
             { value: "staging", label: "staging" },
-            { value: "preview", label: "per-PR preview environments" },
+            { value: "ephemeral-per-pr", label: "ephemeral per-PR environments" },
             { value: "prod", label: "production" },
           ],
         },
