@@ -96,6 +96,9 @@ type PendingChange = {
   newValue: string | string[];
   newValueLabel: string;
   cleared: { fieldLabel: string; valueLabels: string[] }[];
+  /** Sibling fields that depend on this one but have nothing filled in yet
+   * to actually lose — still worth a heads-up, just not a "will clear" one. */
+  affectedFieldLabels: string[];
 };
 
 /** Every option label a raw value (or array of them) resolves to. */
@@ -131,18 +134,26 @@ export function AspectForm({
   const allFields = aspect.cards.flatMap((c) => c.fields);
 
   function setFieldValue(field: AspectField, newValue: string | string[]) {
+    const previousValue = values[field.id];
     const candidateValues = { ...values, [field.id]: newValue };
     const candidateAnswers: RepoAnswers = { ...initialAnswers, [aspect.key]: candidateValues };
 
-    // Would this change strand an already-made choice on a sibling field in
-    // this same aspect? Mirrors cleanup.ts's server-side logic, run live
-    // against the in-progress pick instead of a saved one, scoped to just
-    // this aspect's own fields (everything visible on this page).
+    // Sibling fields that reference this one via compatibleWhen — whether
+    // or not they currently hold a value. A brand-new project may have
+    // nothing filled in yet to strand, but Language is foundational enough
+    // that changing it should still ask, not just when something's
+    // currently at stake.
+    const dependents = allFields.filter(
+      (f) =>
+        f.id !== field.id &&
+        f.options?.some((o) => o.compatibleWhen?.some((r) => r.aspectKey === aspect.key && r.fieldId === field.id))
+    );
+
+    // Of those, which ones would actually strand an already-made choice?
+    // Mirrors cleanup.ts's server-side logic, run live against the
+    // in-progress pick instead of a saved one.
     const cleared: { fieldLabel: string; valueLabels: string[] }[] = [];
-    for (const sibling of allFields) {
-      if (sibling.id === field.id) continue;
-      const hasRules = sibling.options?.some((o) => o.compatibleWhen?.length);
-      if (!hasRules) continue;
+    for (const sibling of dependents) {
       const current = candidateValues[sibling.id];
       if (current === undefined) continue;
       const currentValues = Array.isArray(current) ? current : [current];
@@ -153,13 +164,15 @@ export function AspectForm({
       }
     }
 
-    if (cleared.length > 0) {
+    const isRealChange = previousValue !== undefined && previousValue !== newValue;
+    if (isRealChange && (cleared.length > 0 || dependents.length > 0)) {
       setPending({
         fieldId: field.id,
         fieldLabel: field.label,
         newValue,
         newValueLabel: labelsFor(field, newValue)[0] ?? String(newValue),
         cleared,
+        affectedFieldLabels: dependents.map((f) => f.label),
       });
       return; // not committed to `values` until confirmed
     }
@@ -181,23 +194,32 @@ export function AspectForm({
     <form action={action} className="space-y-6">
       {pending && (
         <div className="sticky top-4 z-10 space-y-2 rounded-md border border-amber-300 bg-amber-50 px-4 py-3 shadow-md">
-          <p className="font-medium text-amber-900">
-            Changing {pending.fieldLabel} to &ldquo;{pending.newValueLabel}&rdquo; will clear:
-          </p>
-          <ul className="list-inside list-disc text-sm text-amber-800">
-            {pending.cleared.map((c) => (
-              <li key={c.fieldLabel}>
-                {c.fieldLabel}: {c.valueLabels.join(", ")}
-              </li>
-            ))}
-          </ul>
+          {pending.cleared.length > 0 ? (
+            <>
+              <p className="font-medium text-amber-900">
+                Changing {pending.fieldLabel} to &ldquo;{pending.newValueLabel}&rdquo; will clear:
+              </p>
+              <ul className="list-inside list-disc text-sm text-amber-800">
+                {pending.cleared.map((c) => (
+                  <li key={c.fieldLabel}>
+                    {c.fieldLabel}: {c.valueLabels.join(", ")}
+                  </li>
+                ))}
+              </ul>
+            </>
+          ) : (
+            <p className="font-medium text-amber-900">
+              Changing {pending.fieldLabel} to &ldquo;{pending.newValueLabel}&rdquo; will change the available
+              options for {pending.affectedFieldLabels.join(", ")} below.
+            </p>
+          )}
           <div className="flex gap-2 pt-1">
             <button
               type="button"
               onClick={confirmPending}
               className="rounded-md bg-amber-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-amber-500"
             >
-              Switch and clear
+              {pending.cleared.length > 0 ? "Switch and clear" : "Switch"}
             </button>
             <button
               type="button"
