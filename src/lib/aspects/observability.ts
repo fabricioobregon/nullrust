@@ -4,7 +4,7 @@ export const observability: AspectDefinition = {
   key: "observability",
   title: "Observability",
   icon: "📡",
-  tagline: "Logging, metrics, tracing, error tracking, and alerting.",
+  tagline: "Logging, metrics, tracing, error handling, tracking, and alerting.",
   scope: "all",
   cards: [
     {
@@ -84,6 +84,82 @@ export const observability: AspectDefinition = {
             { value: "external-calls", label: "Outbound third-party API calls" },
             { value: "background-jobs", label: "Background job duration/success rate" },
             { value: "business-metrics", label: "Key business/product metrics" },
+          ],
+        },
+      ],
+    },
+    {
+      id: "error-handling",
+      title: "Error handling",
+      description:
+        "How failures flow through generated code and across the wire — moved here from Programming Language and API Design so the full error story (raise it, shape it, get paged about it) lives in one place next to how it's tracked.",
+      fields: [
+        {
+          id: "error-handling-style",
+          label: "Error handling style",
+          type: "single",
+          options: [
+            {
+              value: "exceptions",
+              label: "Exceptions (throw / raise / try-catch)",
+              description: "Failures propagate up the call stack until caught — the mainstream default for most OOP/dynamic languages.",
+              recommended: true,
+              compatibleWhen: [
+                {
+                  aspectKey: "programming-language",
+                  fieldId: "language",
+                  values: ["java", "csharp", "python", "ruby", "php", "kotlin", "swift", "javascript", "typescript", "lua", "perl", "r", "clojure"],
+                },
+              ],
+            },
+            {
+              value: "result-type-optional",
+              label: "Result / Either return values",
+              description: "Expected failures are an explicit return value (Result<T,E>, Either, {:ok,_}/{:error,_}), not a thrown exception — reserve panics/exceptions for programmer bugs.",
+              compatibleWhen: [
+                { aspectKey: "programming-language", fieldId: "language", values: ["typescript", "javascript", "kotlin", "swift"] },
+              ],
+            },
+            {
+              value: "result-type",
+              label: "Result / Either return values",
+              description: "Idiomatic here: Result/Either (or tagged {:ok,_}/{:error,_} tuples) for expected failures, panics/exceptions reserved for unrecoverable bugs.",
+              recommended: true,
+              compatibleWhen: [
+                { aspectKey: "programming-language", fieldId: "language", values: ["rust", "scala", "fsharp", "haskell", "elixir"] },
+              ],
+            },
+            {
+              value: "error-value-return",
+              label: "Explicit error-value return (value, err)",
+              description: "Every fallible call returns its error alongside its result and the caller must check it explicitly — the idiomatic, effectively mandatory Go style.",
+              recommended: true,
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["go", "c"] }],
+            },
+            {
+              value: "error-value-return-cpp",
+              label: "Explicit error-value return (error codes)",
+              description: "Error codes / errno-style returns instead of exceptions — still common in performance- or ABI-sensitive C++ code.",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["cpp"] }],
+            },
+            {
+              value: "exceptions-cpp",
+              label: "Exceptions (throw / try-catch)",
+              description: "C++'s other mainstream option — unwinds the stack on failure instead of threading an error code through every return.",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["cpp"] }],
+            },
+          ],
+        },
+        {
+          id: "error-shape",
+          label: "API error response shape",
+          type: "single",
+          description: "Only relevant once an in-code failure crosses an API boundary — not applicable to a repo with no API surface.",
+          options: [
+            { value: "rfc7807", label: "RFC 7807 Problem Details", repos: ["backend"] },
+            { value: "custom-envelope", label: "Custom { error: { code, message } } envelope", repos: ["backend"] },
+            { value: "graphql-errors", label: "GraphQL errors array with extensions.code", repos: ["backend"] },
+            { value: "grpc-status", label: "gRPC status codes", repos: ["backend"] },
           ],
         },
       ],

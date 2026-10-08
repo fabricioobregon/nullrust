@@ -12,7 +12,7 @@ export const programmingLanguage: AspectDefinition = {
   key: "programming-language",
   title: "Programming Language",
   icon: "💻",
-  tagline: "Primary language, version target, error handling, and type safety & validation.",
+  tagline: "Primary language, version target, and type safety & validation.",
   scope: "all",
   cards: [
     {
@@ -83,70 +83,9 @@ export const programmingLanguage: AspectDefinition = {
         },
       ],
     },
-    {
-      id: "error-handling",
-      title: "Error handling",
-      description:
-        "How failures should flow through generated code — the single highest-leverage decision for an AI agent's control flow, and often skipped when only the language is specified.",
-      fields: [
-        {
-          id: "error-handling-style",
-          label: "Error handling style",
-          type: "single",
-          options: [
-            {
-              value: "exceptions",
-              label: "Exceptions (throw / raise / try-catch)",
-              description: "Failures propagate up the call stack until caught — the mainstream default for most OOP/dynamic languages.",
-              recommended: true,
-              compatibleWhen: [
-                {
-                  aspectKey: "programming-language",
-                  fieldId: "language",
-                  values: ["java", "csharp", "python", "ruby", "php", "kotlin", "swift", "javascript", "typescript", "lua", "perl", "r", "clojure"],
-                },
-              ],
-            },
-            {
-              value: "result-type-optional",
-              label: "Result / Either return values",
-              description: "Expected failures are an explicit return value (Result<T,E>, Either, {:ok,_}/{:error,_}), not a thrown exception — reserve panics/exceptions for programmer bugs.",
-              compatibleWhen: [
-                { aspectKey: "programming-language", fieldId: "language", values: ["typescript", "javascript", "kotlin", "swift"] },
-              ],
-            },
-            {
-              value: "result-type",
-              label: "Result / Either return values",
-              description: "Idiomatic here: Result/Either (or tagged {:ok,_}/{:error,_} tuples) for expected failures, panics/exceptions reserved for unrecoverable bugs.",
-              recommended: true,
-              compatibleWhen: [
-                { aspectKey: "programming-language", fieldId: "language", values: ["rust", "scala", "fsharp", "haskell", "elixir"] },
-              ],
-            },
-            {
-              value: "error-value-return",
-              label: "Explicit error-value return (value, err)",
-              description: "Every fallible call returns its error alongside its result and the caller must check it explicitly — the idiomatic, effectively mandatory Go style.",
-              recommended: true,
-              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["go", "c"] }],
-            },
-            {
-              value: "error-value-return-cpp",
-              label: "Explicit error-value return (error codes)",
-              description: "Error codes / errno-style returns instead of exceptions — still common in performance- or ABI-sensitive C++ code.",
-              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["cpp"] }],
-            },
-            {
-              value: "exceptions-cpp",
-              label: "Exceptions (throw / try-catch)",
-              description: "C++'s other mainstream option — unwinds the stack on failure instead of threading an error code through every return.",
-              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["cpp"] }],
-            },
-          ],
-        },
-      ],
-    },
+    // Error handling moved to Observability's "Error handling" card —
+    // see that aspect for the full story (style, API error shape, and how
+    // it's tracked/alerted on) kept together in one place.
     {
       id: "typing",
       title: "Type safety & validation",

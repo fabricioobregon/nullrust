@@ -4,7 +4,7 @@ export const apiDesign: AspectDefinition = {
   key: "api-design",
   title: "API Design",
   icon: "🔌",
-  tagline: "API style, versioning, pagination, and error-shape conventions.",
+  tagline: "API style, versioning, pagination, and payload conventions.",
   scope: ["backend"],
   cards: [
     {
@@ -79,17 +79,8 @@ export const apiDesign: AspectDefinition = {
             { value: "none", label: "No pagination needed" },
           ],
         },
-        {
-          id: "error-shape",
-          label: "Error response shape",
-          type: "single",
-          options: [
-            { value: "rfc7807", label: "RFC 7807 Problem Details" },
-            { value: "custom-envelope", label: "Custom { error: { code, message } } envelope" },
-            { value: "graphql-errors", label: "GraphQL errors array with extensions.code" },
-            { value: "grpc-status", label: "gRPC status codes" },
-          ],
-        },
+        // Error response shape moved to Observability's "Error handling"
+        // card, next to error-handling-style and error tracking/alerting.
         {
           id: "naming-case",
           label: "Payload field casing",
