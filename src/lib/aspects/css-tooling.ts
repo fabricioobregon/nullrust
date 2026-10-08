@@ -19,8 +19,18 @@ export const cssTooling: AspectDefinition = {
           options: [
             { value: "tailwind", label: "Tailwind CSS" },
             { value: "css-modules", label: "CSS Modules" },
-            { value: "styled-components", label: "styled-components" },
-            { value: "emotion", label: "Emotion" },
+            {
+              value: "styled-components",
+              label: "styled-components",
+              description: "A React-pattern CSS-in-JS library — not meaningfully supported outside React.",
+              compatibleWhen: [{ aspectKey: "framework", fieldId: "framework", values: ["nextjs", "remix"] }],
+            },
+            {
+              value: "emotion",
+              label: "Emotion",
+              description: "A React-pattern CSS-in-JS library — not meaningfully supported outside React.",
+              compatibleWhen: [{ aspectKey: "framework", fieldId: "framework", values: ["nextjs", "remix"] }],
+            },
             { value: "vanilla-extract", label: "vanilla-extract" },
             { value: "sass", label: "Sass/SCSS" },
             { value: "plain-css", label: "Plain CSS with BEM" },
@@ -31,12 +41,39 @@ export const cssTooling: AspectDefinition = {
           id: "component-library",
           label: "Component library / design system base",
           type: "single",
+          // The first five are React-specific — gated now that Framework
+          // offers Vue/Angular/Svelte/Solid too. custom/none stay ungated
+          // as the universal fallback, so this can never empty out.
           options: [
-            { value: "shadcn", label: "shadcn/ui" },
-            { value: "radix", label: "Radix Primitives (unstyled)" },
-            { value: "mui", label: "Material UI" },
-            { value: "chakra", label: "Chakra UI" },
-            { value: "mantine", label: "Mantine" },
+            { value: "shadcn", label: "shadcn/ui", compatibleWhen: [{ aspectKey: "framework", fieldId: "framework", values: ["nextjs", "remix"] }] },
+            { value: "radix", label: "Radix Primitives (unstyled)", compatibleWhen: [{ aspectKey: "framework", fieldId: "framework", values: ["nextjs", "remix"] }] },
+            { value: "mui", label: "Material UI", compatibleWhen: [{ aspectKey: "framework", fieldId: "framework", values: ["nextjs", "remix"] }] },
+            { value: "chakra", label: "Chakra UI", compatibleWhen: [{ aspectKey: "framework", fieldId: "framework", values: ["nextjs", "remix"] }] },
+            { value: "mantine", label: "Mantine", compatibleWhen: [{ aspectKey: "framework", fieldId: "framework", values: ["nextjs", "remix"] }] },
+            {
+              value: "vuetify",
+              label: "Vuetify",
+              description: "Material Design components for Vue — the most adopted Vue component library.",
+              compatibleWhen: [{ aspectKey: "framework", fieldId: "framework", values: ["nuxt", "vue-vite"] }],
+            },
+            {
+              value: "angular-material",
+              label: "Angular Material",
+              description: "Angular's own official component library.",
+              compatibleWhen: [{ aspectKey: "framework", fieldId: "framework", values: ["angular"] }],
+            },
+            {
+              value: "skeleton",
+              label: "Skeleton",
+              description: "Tailwind-based component library for Svelte.",
+              compatibleWhen: [{ aspectKey: "framework", fieldId: "framework", values: ["sveltekit", "svelte-vite"] }],
+            },
+            {
+              value: "kobalte",
+              label: "Kobalte",
+              description: "Unstyled accessible primitives for Solid — Solid's Radix equivalent.",
+              compatibleWhen: [{ aspectKey: "framework", fieldId: "framework", values: ["solidstart", "solid-vite"] }],
+            },
             { value: "custom", label: "Fully custom, no base library" },
             { value: "none", label: "None" },
           ],
