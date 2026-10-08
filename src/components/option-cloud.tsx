@@ -131,12 +131,27 @@ export function OptionCloud({
     const container = containerRef.current;
     if (!container || options.length === 0) return;
 
+    // Always attached, enhanced or not: a plain click still needs to update
+    // the confirmation display above the cloud and report the new value
+    // upward for live re-narrowing, even when there's no 3D engine or
+    // hold-to-confirm gesture running at all.
+    function onPlainChange(e: Event) {
+      const input = e.target as HTMLInputElement;
+      if (inputType === "radio") {
+        setConfirmedValue(input.value);
+        onValueChangeRef.current?.(input.value);
+      }
+    }
+    container.addEventListener("change", onPlainChange);
+
     // Decorative ambient motion — an explicit reduced-motion preference
     // keeps the plain flat cloud instead of a spinning one, and skips the
     // whole hold-to-confirm upgrade too: a plain click selects immediately,
     // same as it always has. (There's also no 3D engine to drag without
     // this running.)
-    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
+      return () => container.removeEventListener("change", onPlainChange);
+    }
 
     let cancelled = false;
     let raf = 0;
@@ -232,18 +247,10 @@ export function OptionCloud({
     function onFocusOut() {
       pausedForFocus = false;
     }
-    function onChange(e: Event) {
-      // Fires both for our own programmatic commit (after a completed hold)
-      // and for genuine native changes (keyboard arrow-key navigation within
-      // the radio group) — updating the top display here, unconditionally,
-      // covers both without making keyboard users wait through a hold they
-      // have no way to perform.
-      const input = e.target as HTMLInputElement;
-      if (inputType === "radio") {
-        setConfirmedValue(input.value);
-        onValueChangeRef.current?.(input.value);
-      }
-    }
+    // onPlainChange (attached above, unconditionally) already covers this
+    // path too — it fires both for our own programmatic commit after a
+    // completed hold and for genuine native changes (keyboard arrow-key
+    // navigation within the radio group).
 
     function tick(time: number) {
       if (cancelled || !wasm) return;
@@ -345,7 +352,6 @@ export function OptionCloud({
     window.addEventListener("pointerup", onPointerUp);
     container.addEventListener("focusin", onFocusIn);
     container.addEventListener("focusout", onFocusOut);
-    container.addEventListener("change", onChange);
     container.addEventListener("pointerdown", onItemPointerDown);
     container.addEventListener("pointerup", onItemPointerUp);
     container.addEventListener("pointercancel", onItemPointerUp);
@@ -360,17 +366,17 @@ export function OptionCloud({
       window.removeEventListener("pointerup", onPointerUp);
       container.removeEventListener("focusin", onFocusIn);
       container.removeEventListener("focusout", onFocusOut);
-      container.removeEventListener("change", onChange);
       container.removeEventListener("pointerdown", onItemPointerDown);
       container.removeEventListener("pointerup", onItemPointerUp);
       container.removeEventListener("pointercancel", onItemPointerUp);
       container.removeEventListener("click", onItemClick);
+      container.removeEventListener("change", onPlainChange);
     };
   }, [options.length, inputType]);
 
   function buildLabelBaseClasses(i: number, isEnhanced: boolean): string {
     return [
-      "flex cursor-pointer select-none flex-col items-center gap-1 rounded-xl p-2 font-semibold transition-all duration-150 ease-out",
+      "no-touch-callout flex cursor-pointer select-none flex-col items-center gap-1 rounded-xl p-2 font-semibold transition-all duration-150 ease-out",
       isEnhanced ? "absolute left-1/2 top-1/2 whitespace-nowrap" : "relative inline-flex",
       !isEnhanced && ROTATIONS[i % ROTATIONS.length],
       !isEnhanced && "hover:z-10 hover:scale-110 hover:rotate-0",

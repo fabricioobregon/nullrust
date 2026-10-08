@@ -20,3 +20,14 @@
  * bg-slate-50 the moment prefers-color-scheme: dark is set — that's what
  * caused white-on-white text previously.
  */
+
+/* iOS's long-press "callout" (copy/lookup/save-image menu) fires on the
+   language-cloud items during the 3-second hold-to-confirm gesture, which
+   the gesture has no way to distinguish from an intentional release.
+   touch-action and user-select don't cover this — -webkit-touch-callout is
+   the only property that does, and it's not a Tailwind utility. Scoped to
+   this one class (not applied globally) so it doesn't suppress normal text
+   selection/callouts anywhere else in the app. */
+.no-touch-callout {
+  -webkit-touch-callout: none;
+}

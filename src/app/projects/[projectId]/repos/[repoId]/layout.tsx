@@ -24,14 +24,14 @@ export default async function RepoLayout({
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-12 space-y-6">
-      <div className="flex items-start justify-between gap-4">
-        <div>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
           <Link href="/" className="text-sm text-slate-500 hover:text-slate-700">
             &larr; All projects
           </Link>
-          <h1 className="mt-1 text-2xl font-semibold">{project.name}</h1>
+          <h1 className="mt-1 break-words text-2xl font-semibold">{project.name}</h1>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <a
             href={`/projects/${projectId}/repos/${repoId}/generate`}
             className="rounded-md bg-indigo-600 px-4 py-2 font-medium text-white hover:bg-indigo-500"
@@ -49,9 +49,11 @@ export default async function RepoLayout({
         </div>
       </div>
 
-      <div className="flex gap-8">
-        {/* Repo menu — GitHub-style list of repos under this project. */}
-        <nav className="w-56 shrink-0 space-y-1">
+      <div className="flex flex-col gap-6 md:flex-row md:gap-8">
+        {/* Repo menu — GitHub-style list of repos under this project. Stacks
+            above the content on narrow screens instead of competing with it
+            for horizontal space. */}
+        <nav className="flex flex-col gap-1 md:w-56 md:shrink-0">
           {repos.map((repo) => {
             const kind = getRepoKind(repo.kind);
             const active = repo.id === repoId;
