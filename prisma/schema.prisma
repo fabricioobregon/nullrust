@@ -51,15 +51,20 @@ model Project {
 // One repo added under a project, e.g. "checkout-api" (kind: backend).
 // `kind` matches a key in src/lib/repos.ts and drives which aspects/options
 // apply (see aspectsForRepo / compatibleOptions), not the repo's identity.
+//
+// githubRepoFullName ("owner/repo") is set once the user points this repo at
+// a real GitHub repo to push AGENTS.md into (see src/lib/github-push.ts) —
+// null until then, since not every repo here is pushed anywhere.
 model Repo {
-  id          String             @id @default(cuid())
-  projectId   String
-  name        String
-  kind        String
-  createdAt   DateTime           @default(now())
-  updatedAt   DateTime           @updatedAt
-  project     Project            @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  preferences AspectPreference[]
+  id                 String             @id @default(cuid())
+  projectId          String
+  name               String
+  kind               String
+  githubRepoFullName String?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  project            Project            @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  preferences        AspectPreference[]
 
   @@index([projectId])
 }

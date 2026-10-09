@@ -9,6 +9,10 @@ import { cleanupIncompatibleAnswers } from "@/lib/aspects/cleanup";
 import { AspectAnswers } from "@/lib/aspects/types";
 import { isRepoKind } from "@/lib/repos";
 import { requireUser } from "@/lib/auth/guards";
+import { decrypt } from "@/lib/auth/crypto";
+import { getRepoAnswers } from "@/lib/preferences";
+import { generateAgentsMd } from "@/lib/generate-agents-md";
+import { pushAgentsMdToGithub } from "@/lib/github-push";
 
 export async function createProject(formData: FormData) {
   const user = await requireUser();
@@ -89,4 +93,52 @@ export async function saveAspect(repoId: string, aspectKey: string, formData: Fo
     );
   }
   redirect(`/projects/${repo.projectId}/repos/${repoId}?${params.toString()}`);
+}
+
+export async function setGithubRepo(repoId: string, formData: FormData) {
+  const user = await requireUser();
+  const repo = await db.repo.findUnique({ where: { id: repoId }, include: { project: true } });
+  if (!repo || repo.project.ownerId !== user.id) throw new Error(`Unknown repo: ${repoId}`);
+
+  const raw = String(formData.get("githubRepoFullName") ?? "").trim();
+  if (raw && !/^[^/\s]+\/[^/\s]+$/.test(raw)) {
+    throw new Error('GitHub repo must be in "owner/repo" form');
+  }
+
+  await db.repo.update({ where: { id: repoId }, data: { githubRepoFullName: raw || null } });
+  revalidatePath(`/projects/${repo.projectId}/repos/${repoId}/generate`);
+}
+
+export async function pushToGithub(repoId: string) {
+  const user = await requireUser();
+  const repo = await db.repo.findUnique({ where: { id: repoId }, include: { project: true } });
+  if (!repo || !isRepoKind(repo.kind) || repo.project.ownerId !== user.id) {
+    throw new Error(`Unknown repo: ${repoId}`);
+  }
+
+  const generatePath = `/projects/${repo.projectId}/repos/${repoId}/generate`;
+  if (!repo.githubRepoFullName) {
+    redirect(`${generatePath}?pushError=${encodeURIComponent("Set a GitHub repo below before pushing.")}`);
+  }
+
+  const answers = await getRepoAnswers(repoId);
+  const markdown = await generateAgentsMd(repo.name, repo.kind, answers);
+  const accessToken = decrypt(user.encryptedGithubToken);
+
+  // redirect() throws to work, so it must run after (not inside) this
+  // try/catch — otherwise a successful push's own redirect would be
+  // swallowed by the catch below and reported as a failure.
+  let query: string;
+  try {
+    const { prUrl } = await pushAgentsMdToGithub({
+      accessToken,
+      repoFullName: repo.githubRepoFullName,
+      content: markdown,
+    });
+    query = `prUrl=${encodeURIComponent(prUrl)}`;
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    query = `pushError=${encodeURIComponent(message)}`;
+  }
+  redirect(`${generatePath}?${query}`);
 }
