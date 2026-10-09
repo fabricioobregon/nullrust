@@ -48,6 +48,16 @@ export async function createRepo(projectId: string, formData: FormData) {
   redirect(`/projects/${projectId}/repos/${repo.id}`);
 }
 
+export async function deleteRepo(repoId: string) {
+  const user = await requireUser();
+  const repo = await db.repo.findUnique({ where: { id: repoId }, include: { project: true } });
+  if (!repo || repo.project.ownerId !== user.id) throw new Error(`Unknown repo: ${repoId}`);
+
+  await db.repo.delete({ where: { id: repoId } });
+  revalidatePath(`/projects/${repo.projectId}`);
+  redirect(`/projects/${repo.projectId}`);
+}
+
 export async function saveAspect(repoId: string, aspectKey: string, formData: FormData) {
   const user = await requireUser();
   const repo = await db.repo.findUnique({ where: { id: repoId }, include: { project: true } });
