@@ -19,14 +19,17 @@ function sign(payload: string): string {
 /** A stateless, signed cookie value — no server-side session table. Valid
  * for MAX_AGE_SECONDS from issuance; there's no revocation before then, which
  * is an acceptable trade for not needing a Session model for a single-user-
- * per-browser tool like this one. */
-export function createSessionCookieValue(userId: string): string {
-  const payload = JSON.stringify({ userId, exp: Date.now() + MAX_AGE_SECONDS * 1000 });
+ * per-browser tool like this one. `expiresAt` defaults to that 30-day window
+ * but is overridable so scripts/test-unit.ts can produce a validly-signed,
+ * already-expired cookie to test expiry rejection specifically. */
+export function createSessionCookieValue(userId: string, expiresAt = Date.now() + MAX_AGE_SECONDS * 1000): string {
+  const payload = JSON.stringify({ userId, exp: expiresAt });
   const payloadB64 = Buffer.from(payload, "utf8").toString("base64url");
   return `${payloadB64}.${sign(payloadB64)}`;
 }
 
-function verifySessionCookieValue(value: string): string | null {
+/** Exported for scripts/test-unit.ts — otherwise only used below. */
+export function verifySessionCookieValue(value: string): string | null {
   const [payloadB64, signature] = value.split(".");
   if (!payloadB64 || !signature) return null;
 

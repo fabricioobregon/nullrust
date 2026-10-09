@@ -5,11 +5,12 @@
   "scripts": {
     "predev": "prisma migrate deploy && npm run seed-aspects",
     "dev": "next dev",
-    "prebuild": "npm run verify-registry",
+    "prebuild": "npm run verify-registry && npm run test",
     "build": "next build",
     "prestart": "prisma migrate deploy && npm run seed-aspects",
     "start": "next start",
     "lint": "eslint",
+    "test": "tsx scripts/test-unit.ts",
     "verify-registry": "tsx scripts/verify-registry.ts",
     "seed-aspects": "tsx scripts/seed-aspects.ts",
     "postinstall": "prisma generate",
