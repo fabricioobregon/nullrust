@@ -80,3 +80,46 @@ Don't start `npm run dev` to check work. Verify via `npm run build`,
 scripts instead — then push and confirm via the live Railway
 deployment (`list-deployments` / `get-logs` through the Railway MCP
 tools) rather than a local server.
+
+## Permanent unit tests
+
+`scripts/test-unit.ts` is permanent, same deal as verify-registry —
+wired into `prebuild` and CI, not a one-off script. Deliberately
+scoped to logic that needs no live database (crypto, session signing,
+the GitHub push/PR mechanics against a mocked fetch), since CI has no
+database and standing one up just for tests would be a bigger change
+than the tests themselves. Anything that reads the DB-backed registry
+(e.g. `generateAgentsMd`) stays manually verified per change instead.
+
+## Users, sessions, and ownership
+
+`Project.ownerId` (nullable only for rows that predate accounts) is
+the whole access-control model — every page that loads a project or
+repo by id, and every mutating action in `actions.ts`, must check it
+independently. Pages rely on `requireProjectOwner()` in
+`src/lib/auth/guards.ts` (404s, not redirects, on a mismatch, so a
+signed-in user learns nothing about another user's project ids), but
+a Server Action can be invoked directly without ever rendering the
+page that would have gated it — so every mutating action re-checks
+ownership itself rather than trusting a page-level guard already ran.
+
+Sessions are a stateless HMAC-signed cookie (`SESSION_SECRET`), not a
+DB-backed table — no server-side revocation before the 30-day expiry,
+traded deliberately for not needing a session store. The GitHub OAuth
+access token is encrypted at rest (`TOKEN_ENCRYPTION_KEY`,
+`src/lib/auth/crypto.ts`) since it grants repo access on the user's
+behalf. Both secrets are already set on Railway; `GITHUB_CLIENT_ID`/
+`GITHUB_CLIENT_SECRET` still need a GitHub OAuth App the user creates
+by hand (no API for that) before login actually works end to end.
+
+## Business context: why it's Anthropic-only
+
+`src/components/business-context-editor.tsx` calls an AI directly
+from the browser with the user's own API key, specifically so neither
+the key nor any business-logic text the user types ever reaches our
+server. This only works with Anthropic's Messages API, which
+explicitly supports direct-from-browser calls via the
+`anthropic-dangerous-direct-browser-access` header — most providers'
+APIs don't expose CORS for this, so don't assume adding another
+provider is a drop-in copy of this pattern without checking that
+first.
