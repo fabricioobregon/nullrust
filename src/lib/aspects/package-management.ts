@@ -195,9 +195,23 @@ export const packageManagement: AspectDefinition = {
           type: "single",
           options: [
             { value: "none-single-repo", label: "None — single package repo" },
-            { value: "turborepo", label: "Turborepo" },
-            { value: "nx", label: "Nx" },
-            { value: "lerna", label: "Lerna" },
+            {
+              value: "turborepo",
+              label: "Turborepo",
+              description: "Understands package.json workspaces specifically — JS/TS ecosystem only.",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["typescript", "javascript"] }],
+            },
+            {
+              value: "nx",
+              label: "Nx",
+              description: "Primarily JS/TS-rooted but has official polyglot plugins (Go, Python, Java, .NET) — left ungated.",
+            },
+            {
+              value: "lerna",
+              label: "Lerna",
+              description: "Versions and publishes npm packages specifically — JS/TS ecosystem only.",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["typescript", "javascript"] }],
+            },
             { value: "native-workspaces", label: "Native workspaces only, no orchestrator" },
           ],
         },
