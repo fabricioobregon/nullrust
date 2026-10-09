@@ -19,9 +19,19 @@ export const apiDesign: AspectDefinition = {
             { value: "rest", label: "REST" },
             { value: "graphql", label: "GraphQL" },
             { value: "grpc", label: "gRPC" },
-            { value: "trpc", label: "tRPC" },
+            {
+              value: "trpc",
+              label: "tRPC",
+              description: "End-to-end type inference between client and server — its only reason to exist, so it needs TypeScript on both ends.",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["typescript"] }],
+            },
             { value: "json-rpc", label: "JSON-RPC" },
-            { value: "server-actions-only", label: "Server Actions / RPC-style framework functions only" },
+            {
+              value: "server-actions-only",
+              label: "Server Actions / RPC-style framework functions only",
+              description: "Only meaningful with a full-stack meta-framework that has this concept built in.",
+              compatibleWhen: [{ aspectKey: "framework", fieldId: "framework", values: ["nextjs", "remix", "nuxt", "sveltekit", "solidstart"] }],
+            },
           ],
         },
         {
