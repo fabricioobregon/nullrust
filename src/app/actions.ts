@@ -8,29 +8,36 @@ import { getAspect, isAspectInRepoScope } from "@/lib/aspects/registry";
 import { cleanupIncompatibleAnswers } from "@/lib/aspects/cleanup";
 import { AspectAnswers } from "@/lib/aspects/types";
 import { isRepoKind } from "@/lib/repos";
+import { requireUser } from "@/lib/auth/guards";
 
 export async function createProject(formData: FormData) {
+  const user = await requireUser();
   const name = String(formData.get("name") ?? "").trim();
   if (!name) return;
 
-  const project = await db.project.create({ data: { name } });
+  const project = await db.project.create({ data: { name, ownerId: user.id } });
   redirect(`/projects/${project.id}`);
 }
 
 export async function deleteProject(projectId: string) {
+  const user = await requireUser();
+  const project = await db.project.findUnique({ where: { id: projectId } });
+  if (!project || project.ownerId !== user.id) throw new Error(`Unknown project: ${projectId}`);
+
   await db.project.delete({ where: { id: projectId } });
   revalidatePath("/");
   redirect("/");
 }
 
 export async function createRepo(projectId: string, formData: FormData) {
+  const user = await requireUser();
   const name = String(formData.get("name") ?? "").trim();
   const kind = String(formData.get("kind") ?? "");
   if (!name) throw new Error("Repo name is required");
   if (!isRepoKind(kind)) throw new Error(`Unknown repo kind: ${kind}`);
 
   const project = await db.project.findUnique({ where: { id: projectId } });
-  if (!project) throw new Error(`Unknown project: ${projectId}`);
+  if (!project || project.ownerId !== user.id) throw new Error(`Unknown project: ${projectId}`);
 
   const repo = await db.repo.create({ data: { projectId, name, kind } });
   revalidatePath(`/projects/${projectId}`);
@@ -38,8 +45,11 @@ export async function createRepo(projectId: string, formData: FormData) {
 }
 
 export async function saveAspect(repoId: string, aspectKey: string, formData: FormData) {
-  const repo = await db.repo.findUnique({ where: { id: repoId } });
-  if (!repo || !isRepoKind(repo.kind)) throw new Error(`Unknown repo: ${repoId}`);
+  const user = await requireUser();
+  const repo = await db.repo.findUnique({ where: { id: repoId }, include: { project: true } });
+  if (!repo || !isRepoKind(repo.kind) || repo.project.ownerId !== user.id) {
+    throw new Error(`Unknown repo: ${repoId}`);
+  }
 
   const aspect = await getAspect(aspectKey);
   if (!aspect) throw new Error(`Unknown aspect: ${aspectKey}`);

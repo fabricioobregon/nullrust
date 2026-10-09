@@ -11,16 +11,41 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// A signed-in GitHub user. githubId is GitHub's own numeric user id
+// (stringified) — stable across username changes, unlike githubLogin.
+// encryptedGithubToken is the OAuth access token, encrypted at rest with
+// AES-256-GCM (see src/lib/auth/crypto.ts) since it grants repo access on
+// the user's behalf.
+model User {
+  id                   String    @id @default(cuid())
+  githubId             String    @unique
+  githubLogin          String
+  githubAvatarUrl      String?
+  encryptedGithubToken String
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+  projects             Project[]
+}
+
 // A project is a collection of repos the user adds as needed (infra,
 // backend, frontend, mobile, or other — see src/lib/repos.ts for the kind
 // list). Each repo generates its own AGENTS.md.
+//
+// ownerId is nullable only to accommodate rows created before user accounts
+// existed — the GitHub OAuth callback claims any still-unowned project for
+// the very first user to ever sign in (see src/app/api/auth/github/callback/
+// route.ts). Every project created from here on always has an owner.
 model Project {
   id          String             @id @default(cuid())
   name        String
+  ownerId     String?
   createdAt   DateTime           @default(now())
   updatedAt   DateTime           @updatedAt
+  owner       User?              @relation(fields: [ownerId], references: [id], onDelete: SetNull)
   preferences AspectPreference[]
   repos       Repo[]
+
+  @@index([ownerId])
 }
 
 // One repo added under a project, e.g. "checkout-api" (kind: backend).

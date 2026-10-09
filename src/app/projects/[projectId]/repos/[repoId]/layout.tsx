@@ -3,6 +3,7 @@ import Link from "next/link";
 import { db } from "@/lib/db";
 import { getRepoKind } from "@/lib/repos";
 import { deleteProject } from "@/app/actions";
+import { requireProjectOwner } from "@/lib/auth/guards";
 
 export const dynamic = "force-dynamic";
 
@@ -15,8 +16,9 @@ export default async function RepoLayout({
 }) {
   const { projectId, repoId } = await params;
 
-  const project = await db.project.findUnique({ where: { id: projectId } });
-  if (!project) notFound();
+  // Also gates every nested route (aspects/[aspectKey], generate) — neither
+  // fetches its own ownership check, both rely on this layout running first.
+  const { project } = await requireProjectOwner(projectId);
 
   const repos = await db.repo.findMany({ where: { projectId }, orderBy: { createdAt: "asc" } });
   const activeRepo = repos.find((r) => r.id === repoId);

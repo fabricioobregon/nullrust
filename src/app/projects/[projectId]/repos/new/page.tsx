@@ -1,7 +1,6 @@
-import { notFound } from "next/navigation";
-import { db } from "@/lib/db";
 import { repoKinds } from "@/lib/repos";
 import { createRepo } from "@/app/actions";
+import { requireProjectOwner } from "@/lib/auth/guards";
 
 export const dynamic = "force-dynamic";
 
@@ -12,8 +11,7 @@ export default async function NewRepoPage({
 }) {
   const { projectId } = await params;
 
-  const project = await db.project.findUnique({ where: { id: projectId } });
-  if (!project) notFound();
+  const { project } = await requireProjectOwner(projectId);
 
   const action = createRepo.bind(null, projectId);
 

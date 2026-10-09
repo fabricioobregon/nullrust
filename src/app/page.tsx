@@ -1,10 +1,33 @@
 import { db } from "@/lib/db";
 import { createProject } from "@/app/actions";
+import { getCurrentUser } from "@/lib/auth/session";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
+  const user = await getCurrentUser();
+
+  if (!user) {
+    return (
+      <div className="mx-auto max-w-5xl px-6 py-12 space-y-6">
+        <h1 className="text-2xl font-semibold">AGENTS.md Builder</h1>
+        <p className="text-slate-600">
+          Configure your stack and conventions, then generate an{" "}
+          <code className="rounded bg-slate-200 px-1">AGENTS.md</code> file to guard-rail any coding
+          agent working in your repos. Sign in with GitHub to create and manage your projects.
+        </p>
+        <a
+          href="/api/auth/github"
+          className="inline-block rounded-md bg-slate-900 px-4 py-2 font-medium text-white hover:bg-slate-700"
+        >
+          Sign in with GitHub
+        </a>
+      </div>
+    );
+  }
+
   const projects = await db.project.findMany({
+    where: { ownerId: user.id },
     orderBy: { updatedAt: "desc" },
   });
 
