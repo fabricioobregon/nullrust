@@ -64,6 +64,18 @@ export const messagingBackgroundJobs: AspectDefinition = {
               label: "Celery",
               compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["python"] }],
             },
+            {
+              value: "oban",
+              label: "Oban",
+              description: "The Elixir standard — built on Ecto/Postgres, same tier of dominance as Sidekiq for Ruby.",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["elixir"] }],
+            },
+            {
+              value: "hangfire",
+              label: "Hangfire",
+              description: "The .NET standard for background jobs.",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["csharp"] }],
+            },
             { value: "cloud-tasks", label: "Cloud Tasks / managed queue-triggered functions" },
             { value: "cron-scripts", label: "Cron-triggered scripts" },
             { value: "none", label: "None" },
