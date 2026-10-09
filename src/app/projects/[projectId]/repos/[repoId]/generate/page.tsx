@@ -22,7 +22,7 @@ export default async function GeneratePage({
   if (!isRepoKind(repo.kind)) notFound();
 
   const answers = await getRepoAnswers(repoId);
-  const markdown = generateAgentsMd(repo.name, repo.kind, answers);
+  const markdown = await generateAgentsMd(repo.name, repo.kind, answers);
   const downloadHref = `data:text/markdown;charset=utf-8,${encodeURIComponent(markdown)}`;
 
   return (

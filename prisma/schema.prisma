@@ -55,3 +55,26 @@ model AspectPreference {
 
   @@unique([repoId, aspectKey])
 }
+
+// This is our content, not the customer's — the aspect/card/field/option
+// registry, migrated out of static TypeScript so it's a runtime-cached
+// data load instead of something that requires a code deploy to change.
+// src/lib/aspects/static-registry.ts remains the authored source (what a
+// human edits and what scripts/verify-registry.ts validates); this table
+// is re-seeded from it on every deploy (see package.json's `prestart`),
+// never hand-edited directly. `scope` and `cards` are JSON, mirroring the
+// exact nested shape of AspectDefinition.scope/cards in src/lib/aspects/
+// types.ts — not normalized into separate tables, since this is read far
+// more than written and the whole tree is cached in memory per process
+// (see src/lib/aspects/registry.ts) rather than queried field-by-field.
+model Aspect {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  title     String
+  icon      String
+  tagline   String
+  scope     String // JSON-encoded RepoKind[] | "all"
+  order     Int // display order — replaces array position in the old static registry
+  cards     String // JSON-encoded AspectCard[]
+  updatedAt DateTime @updatedAt
+}

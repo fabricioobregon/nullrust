@@ -13,6 +13,7 @@ function Field({
   repoAnswers,
   repoKind,
   repoTitle,
+  allAspects,
   onValueChange,
 }: {
   field: AspectField;
@@ -20,6 +21,7 @@ function Field({
   repoAnswers: RepoAnswers;
   repoKind: RepoKind;
   repoTitle: string;
+  allAspects: AspectDefinition[];
   onValueChange: (value: string | string[]) => void;
 }) {
   if (!isFieldVisible(field, repoAnswers, repoKind)) return null;
@@ -55,7 +57,7 @@ function Field({
   const displayOptions: FieldOption[] = [...filtered, ...stale];
   const reasons =
     filtered.length < (field.options?.length ?? 0)
-      ? narrowingReasons(field, repoAnswers, repoKind, repoTitle)
+      ? narrowingReasons(field, repoAnswers, repoKind, repoTitle, allAspects)
       : [];
 
   return (
@@ -112,12 +114,17 @@ function labelsFor(field: AspectField, raw: string | string[] | undefined): stri
 
 export function AspectForm({
   aspect,
+  allAspects,
   initialAnswers,
   repoKind,
   repoTitle,
   action,
 }: {
   aspect: AspectDefinition;
+  /** The full registry (DB-backed now, fetched once server-side) — needed
+   * only so narrowingReasons can look up an upstream field's label/options
+   * for a cross-aspect compatibleWhen rule, live, during client render. */
+  allAspects: AspectDefinition[];
   /** Every aspect's saved answers for this repo — this aspect's own slice becomes the live, in-progress state below. */
   initialAnswers: RepoAnswers;
   repoKind: RepoKind;
@@ -250,6 +257,7 @@ export function AspectForm({
               repoAnswers={liveAnswers}
               repoKind={repoKind}
               repoTitle={repoTitle}
+              allAspects={allAspects}
               onValueChange={(v) => setFieldValue(field, v)}
             />
           ))}

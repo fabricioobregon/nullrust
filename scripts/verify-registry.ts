@@ -18,12 +18,15 @@
  *    exact failure mode behind the mongoose/column-case/error-shape bugs:
  *    compatibleOptions()'s "never show zero options" fallback silently
  *    undoes an exclusion that was meant to be total.
- * 4. registry.ts's aspect order is topologically valid — every aspect
- *    referenced by another aspect's compatibleWhen rule must come at or
- *    before it, so the "earlier aspects narrow later ones" comment at the
- *    top of registry.ts stays true as aspects are added or reordered.
+ * 4. static-registry.ts's aspect order is topologically valid — every
+ *    aspect referenced by another aspect's compatibleWhen rule must come
+ *    at or before it, so the "earlier aspects narrow later ones" ordering
+ *    stays true as aspects are added or reordered. This validates the
+ *    authored source (what gets seeded), not the DB-backed runtime copy
+ *    in registry.ts — see scripts/seed-aspects.ts for how one becomes
+ *    the other.
  */
-import { aspects } from "@/lib/aspects/registry";
+import { aspects } from "@/lib/aspects/static-registry";
 import { isFieldVisible, isValueCompatible } from "@/lib/aspects/compatibility";
 import { AspectField, CompatibilityRule } from "@/lib/aspects/types";
 import { repoKinds } from "@/lib/repos";

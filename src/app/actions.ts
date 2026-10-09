@@ -41,7 +41,7 @@ export async function saveAspect(repoId: string, aspectKey: string, formData: Fo
   const repo = await db.repo.findUnique({ where: { id: repoId } });
   if (!repo || !isRepoKind(repo.kind)) throw new Error(`Unknown repo: ${repoId}`);
 
-  const aspect = getAspect(aspectKey);
+  const aspect = await getAspect(aspectKey);
   if (!aspect) throw new Error(`Unknown aspect: ${aspectKey}`);
   if (!isAspectInRepoScope(aspect, repo.kind)) {
     throw new Error(`Aspect "${aspectKey}" is not in scope for repo kind "${repo.kind}"`);

@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
-import { getAspect, isAspectInRepoScope } from "@/lib/aspects/registry";
+import { getAspect, getAspects, isAspectInRepoScope } from "@/lib/aspects/registry";
 import { getRepoAnswers } from "@/lib/preferences";
 import { saveAspect } from "@/app/actions";
 import { getRepoKind, isRepoKind } from "@/lib/repos";
@@ -15,10 +15,11 @@ export default async function AspectPage({
 }) {
   const { projectId, repoId, aspectKey } = await params;
 
-  const [project, repo, aspect] = await Promise.all([
+  const [project, repo, aspect, allAspects] = await Promise.all([
     db.project.findUnique({ where: { id: projectId } }),
     db.repo.findUnique({ where: { id: repoId } }),
-    Promise.resolve(getAspect(aspectKey)),
+    getAspect(aspectKey),
+    getAspects(),
   ]);
   if (!project || !repo || repo.projectId !== projectId) notFound();
   if (!isRepoKind(repo.kind)) notFound();
@@ -47,7 +48,14 @@ export default async function AspectPage({
         </p>
       </div>
 
-      <AspectForm aspect={aspect} initialAnswers={repoAnswers} repoKind={repoKind} repoTitle={kind.title} action={action} />
+      <AspectForm
+        aspect={aspect}
+        allAspects={allAspects}
+        initialAnswers={repoAnswers}
+        repoKind={repoKind}
+        repoTitle={kind.title}
+        action={action}
+      />
     </div>
   );
 }

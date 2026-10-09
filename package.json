@@ -3,14 +3,15 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "predev": "prisma migrate deploy",
+    "predev": "prisma migrate deploy && npm run seed-aspects",
     "dev": "next dev",
     "prebuild": "npm run verify-registry",
     "build": "next build",
-    "prestart": "prisma migrate deploy",
+    "prestart": "prisma migrate deploy && npm run seed-aspects",
     "start": "next start",
     "lint": "eslint",
     "verify-registry": "tsx scripts/verify-registry.ts",
+    "seed-aspects": "tsx scripts/seed-aspects.ts",
     "postinstall": "prisma generate",
     "db:reset": "prisma migrate reset",
     "wasm:build": "asc assembly/cloud3d.ts --outFile public/wasm/cloud3d.wasm --optimize --noAssert"

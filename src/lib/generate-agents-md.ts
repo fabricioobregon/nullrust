@@ -47,12 +47,13 @@ function renderAspect(aspect: AspectDefinition, repoAnswers: RepoAnswers, repoKi
   return [`## ${aspect.icon} ${aspect.title}`, "", ...lines].join("\n");
 }
 
-export function generateAgentsMd(
+export async function generateAgentsMd(
   repoName: string,
   repoKind: RepoKind,
   answersByAspect: Record<string, AspectAnswers>
-): string {
-  const sections = aspectsForRepo(repoKind)
+): Promise<string> {
+  const aspects = await aspectsForRepo(repoKind);
+  const sections = aspects
     .map((aspect) => renderAspect(aspect, answersByAspect, repoKind))
     .filter((s): s is string => s !== null);
 

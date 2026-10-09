@@ -34,12 +34,13 @@ export async function cleanupIncompatibleAnswers(
   repoKind: RepoKind
 ): Promise<ClearedAnswer[]> {
   const cleared: ClearedAnswer[] = [];
+  const aspectsInScope = await aspectsForRepo(repoKind);
 
   for (let pass = 0; pass < 4; pass++) {
     const answers = await getRepoAnswers(repoId);
     let changedThisPass = false;
 
-    for (const aspect of aspectsForRepo(repoKind)) {
+    for (const aspect of aspectsInScope) {
       const aspectAnswers = answers[aspect.key];
       if (!aspectAnswers) continue;
 

@@ -20,8 +20,7 @@ export default async function RepoAspectsPage({
   if (!repo || repo.projectId !== projectId || !isRepoKind(repo.kind)) notFound();
 
   const kind = getRepoKind(repo.kind)!;
-  const aspects = aspectsForRepo(repo.kind);
-  const answersByAspect = await getRepoAnswers(repoId);
+  const [aspects, answersByAspect] = await Promise.all([aspectsForRepo(repo.kind), getRepoAnswers(repoId)]);
   const totalFields = aspects.reduce((sum, a) => sum + fieldCount(a), 0);
   const totalAnswered = aspects.reduce(
     (sum, a) => sum + answeredFieldCount(a, answersByAspect[a.key] ?? {}),

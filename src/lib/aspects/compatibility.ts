@@ -1,5 +1,4 @@
-import { AspectAnswers, AspectField, FieldOption } from "./types";
-import { getAspect } from "./registry";
+import { AspectAnswers, AspectDefinition, AspectField, FieldOption } from "./types";
 import { RepoKind } from "@/lib/repos";
 
 /** All aspects' saved answers for one repo, keyed by aspect key. */
@@ -118,12 +117,20 @@ export function isFieldVisible(field: AspectField, answers: RepoAnswers, repoKin
  * Human-readable description of what's actually driving the narrowing, e.g.
  * ["this repo (Mobile)", "Language = Dart"] — so the UI can say exactly why
  * options disappeared instead of a generic "stuff changed" message.
+ *
+ * Takes the full aspect list as a plain parameter rather than importing it
+ * from registry.ts directly — registry.ts is DB-backed and async, but this
+ * runs on every render of a live, client-side reactive form (re-narrowing
+ * as the user picks something, before saving), which can't await a query
+ * mid-render. The caller (aspect-form.tsx) fetches the list once, server-
+ * side, and passes it down as a prop instead.
  */
 export function narrowingReasons(
   field: AspectField,
   answers: RepoAnswers,
   repoKind: RepoKind,
-  repoTitle: string
+  repoTitle: string,
+  allAspects: AspectDefinition[]
 ): string[] {
   const reasons: string[] = [];
 
@@ -132,7 +139,7 @@ export function narrowingReasons(
 
   for (const { aspectKey, fieldId } of referencedFields(field)) {
     if (!isAnswered(answers, aspectKey, fieldId)) continue;
-    const upstreamAspect = getAspect(aspectKey);
+    const upstreamAspect = allAspects.find((a) => a.key === aspectKey);
     const upstreamField = upstreamAspect?.cards.flatMap((c) => c.fields).find((f) => f.id === fieldId);
     if (!upstreamField) continue;
     const raw = answers[aspectKey]![fieldId]!;
