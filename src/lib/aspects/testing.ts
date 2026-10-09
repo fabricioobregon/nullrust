@@ -42,6 +42,12 @@ export const testing: AspectDefinition = {
               compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["java", "kotlin"] }],
             },
             {
+              value: "kotest",
+              label: "Kotest",
+              description: "Kotlin-native — a matcher DSL and property-based testing, idiomatic in a way JUnit (designed for Java) isn't.",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["kotlin"] }],
+            },
+            {
               value: "rspec",
               label: "RSpec",
               compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["ruby"] }],

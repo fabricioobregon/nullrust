@@ -44,7 +44,14 @@ export const lintingFormatting: AspectDefinition = {
             {
               value: "checkstyle",
               label: "Checkstyle",
-              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["java", "kotlin"] }],
+              description: "Parses Java source specifically — cannot analyze Kotlin files at all.",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["java"] }],
+            },
+            {
+              value: "detekt",
+              label: "detekt",
+              description: "Kotlin's own static analysis tool, since Checkstyle can't parse Kotlin.",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["kotlin"] }],
             },
             {
               value: "clippy",
