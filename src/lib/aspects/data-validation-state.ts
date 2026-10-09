@@ -19,12 +19,88 @@ export const dataValidationState: AspectDefinition = {
           id: "client-state",
           label: "Client/UI state",
           type: "single",
+          // Originally unconditional, which meant a Vue/Angular/Svelte/
+          // Flutter/SwiftUI/Compose/MAUI project was offered five
+          // React-only options and nothing that actually applied to it —
+          // same "zero real options for a whole swath of frameworks" bug
+          // as framework.framework's long-tail-language gap. Every option
+          // below is now gated to the frameworks it's actually idiomatic
+          // for; with no framework answered yet, the usual "nothing to
+          // narrow by" fallback shows all of them, same as elsewhere.
           options: [
-            { value: "react-state-context", label: "React useState/useReducer + Context" },
-            { value: "zustand", label: "Zustand" },
-            { value: "redux-toolkit", label: "Redux Toolkit" },
-            { value: "jotai-recoil", label: "Jotai / Recoil (atoms)" },
-            { value: "signals", label: "Signals (Preact Signals/Solid)" },
+            {
+              value: "react-state-context",
+              label: "React useState/useReducer + Context",
+              compatibleWhen: [{ aspectKey: "framework", fieldId: "framework", values: ["nextjs", "remix", "react-native"] }],
+            },
+            {
+              value: "zustand",
+              label: "Zustand",
+              compatibleWhen: [{ aspectKey: "framework", fieldId: "framework", values: ["nextjs", "remix", "react-native"] }],
+            },
+            {
+              value: "redux-toolkit",
+              label: "Redux Toolkit",
+              compatibleWhen: [{ aspectKey: "framework", fieldId: "framework", values: ["nextjs", "remix", "react-native"] }],
+            },
+            {
+              value: "jotai-recoil",
+              label: "Jotai / Recoil (atoms)",
+              compatibleWhen: [{ aspectKey: "framework", fieldId: "framework", values: ["nextjs", "remix", "react-native"] }],
+            },
+            {
+              value: "signals",
+              label: "Signals",
+              description: "Solid's core reactivity primitive.",
+              compatibleWhen: [{ aspectKey: "framework", fieldId: "framework", values: ["solidstart", "solid-vite"] }],
+            },
+            {
+              value: "pinia",
+              label: "Pinia",
+              description: "Vue's official state management library.",
+              compatibleWhen: [{ aspectKey: "framework", fieldId: "framework", values: ["nuxt", "vue-vite"] }],
+            },
+            {
+              value: "angular-services-signals",
+              label: "Services + Signals/RxJS",
+              description: "Angular's own DI-based services, with Signals (newer) or RxJS observables for reactive state.",
+              compatibleWhen: [{ aspectKey: "framework", fieldId: "framework", values: ["angular"] }],
+            },
+            {
+              value: "svelte-stores",
+              label: "Svelte stores / runes",
+              compatibleWhen: [{ aspectKey: "framework", fieldId: "framework", values: ["sveltekit", "svelte-vite"] }],
+            },
+            {
+              value: "flutter-riverpod",
+              label: "Riverpod / Provider / Bloc",
+              description: "The three mainstream Flutter state-management approaches, in roughly most-to-least-recommended order.",
+              compatibleWhen: [{ aspectKey: "framework", fieldId: "framework", values: ["flutter"] }],
+            },
+            {
+              value: "swiftui-observable",
+              label: "@State / @Observable",
+              description: "SwiftUI's own property-wrapper-based state, no external library needed.",
+              compatibleWhen: [{ aspectKey: "framework", fieldId: "framework", values: ["swiftui"] }],
+            },
+            {
+              value: "compose-viewmodel",
+              label: "ViewModel + StateFlow",
+              description: "Jetpack Compose's recommended pattern — remember/mutableStateOf for local UI state, ViewModel+StateFlow for anything that survives recomposition.",
+              compatibleWhen: [{ aspectKey: "framework", fieldId: "framework", values: ["jetpack-compose"] }],
+            },
+            {
+              value: "maui-mvvm",
+              label: "MVVM (ObservableObject/INotifyPropertyChanged)",
+              description: ".NET MAUI's idiomatic data-binding pattern.",
+              compatibleWhen: [{ aspectKey: "framework", fieldId: "framework", values: ["maui"] }],
+            },
+            // Ungated universal fallback — every other narrowed field in
+            // this registry keeps one of these so compatibleOptions()'s
+            // "never show zero" safety net never has to engage. Covers an
+            // unanswered/no-framework repo and anything genuinely not
+            // listed above.
+            { value: "other", label: "Other / not listed above" },
           ],
         },
         {
