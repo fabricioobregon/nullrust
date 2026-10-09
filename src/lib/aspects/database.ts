@@ -135,6 +135,103 @@ export const database: AspectDefinition = {
               ],
             },
             {
+              value: "gorm",
+              label: "GORM",
+              description: "The dominant Go ORM — full-featured, easy to start with.",
+              recommended: true,
+              compatibleWhen: [
+                { aspectKey: "programming-language", fieldId: "language", values: ["go"] },
+                { aspectKey: "database", fieldId: "engine", values: RELATIONAL_ENGINES },
+              ],
+            },
+            {
+              value: "diesel",
+              label: "Diesel",
+              description: "Compile-time query-checked ORM — the more traditional Rust choice.",
+              recommended: true,
+              compatibleWhen: [
+                { aspectKey: "programming-language", fieldId: "language", values: ["rust"] },
+                { aspectKey: "database", fieldId: "engine", values: RELATIONAL_ENGINES },
+              ],
+            },
+            {
+              value: "sqlx-rust",
+              label: "sqlx",
+              description: "Async-native query builder with compile-time-checked SQL — not a full ORM, increasingly the default in Axum/Actix projects.",
+              compatibleWhen: [
+                { aspectKey: "programming-language", fieldId: "language", values: ["rust"] },
+                { aspectKey: "database", fieldId: "engine", values: RELATIONAL_ENGINES },
+              ],
+            },
+            {
+              value: "hibernate-jpa",
+              label: "Hibernate / JPA",
+              description: "The mainstream JVM ORM — mature, heavily annotation-driven.",
+              recommended: true,
+              compatibleWhen: [
+                { aspectKey: "programming-language", fieldId: "language", values: ["java", "kotlin"] },
+                { aspectKey: "database", fieldId: "engine", values: RELATIONAL_ENGINES },
+              ],
+            },
+            {
+              value: "exposed",
+              label: "Exposed",
+              description: "JetBrains' own lightweight Kotlin SQL framework — DSL or DAO style, less ceremony than Hibernate.",
+              compatibleWhen: [
+                { aspectKey: "programming-language", fieldId: "language", values: ["kotlin"] },
+                { aspectKey: "database", fieldId: "engine", values: RELATIONAL_ENGINES },
+              ],
+            },
+            {
+              value: "ef-core",
+              label: "Entity Framework Core",
+              description: "Microsoft's own ORM — the standard choice for .NET backends.",
+              recommended: true,
+              compatibleWhen: [
+                { aspectKey: "programming-language", fieldId: "language", values: ["csharp"] },
+                { aspectKey: "database", fieldId: "engine", values: RELATIONAL_ENGINES },
+              ],
+            },
+            {
+              value: "fluent",
+              label: "Fluent",
+              description: "Vapor's own ORM — only makes sense paired with Vapor as the framework.",
+              compatibleWhen: [
+                { aspectKey: "programming-language", fieldId: "language", values: ["swift"] },
+                { aspectKey: "framework", fieldId: "framework", values: ["vapor"] },
+                { aspectKey: "database", fieldId: "engine", values: RELATIONAL_ENGINES },
+              ],
+            },
+            {
+              value: "ecto",
+              label: "Ecto",
+              description: "Elixir's standard data-mapping and query library.",
+              recommended: true,
+              compatibleWhen: [
+                { aspectKey: "programming-language", fieldId: "language", values: ["elixir"] },
+                { aspectKey: "database", fieldId: "engine", values: RELATIONAL_ENGINES },
+              ],
+            },
+            {
+              value: "eloquent",
+              label: "Eloquent",
+              description: "Laravel's built-in ORM — convention-driven, like ActiveRecord.",
+              compatibleWhen: [
+                { aspectKey: "programming-language", fieldId: "language", values: ["php"] },
+                { aspectKey: "framework", fieldId: "framework", values: ["laravel"] },
+                { aspectKey: "database", fieldId: "engine", values: RELATIONAL_ENGINES },
+              ],
+            },
+            {
+              value: "slick",
+              label: "Slick",
+              description: "Scala's longest-established query/ORM library — Doobie and Quill are real alternatives in this ecosystem.",
+              compatibleWhen: [
+                { aspectKey: "programming-language", fieldId: "language", values: ["scala"] },
+                { aspectKey: "database", fieldId: "engine", values: RELATIONAL_ENGINES },
+              ],
+            },
+            {
               value: "raw-sql",
               label: "Raw SQL / hand-written queries",
               description: "No abstraction layer — full control, more boilerplate.",

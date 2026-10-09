@@ -132,6 +132,13 @@ export const framework: AspectDefinition = {
               compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["java", "kotlin"] }],
             },
             {
+              value: "ktor",
+              label: "Ktor",
+              description: "JetBrains' own Kotlin-native framework — coroutine-based, lighter-weight than Spring Boot.",
+              repos: ["backend"],
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["kotlin"] }],
+            },
+            {
               value: "aspnet-core",
               label: "ASP.NET Core",
               description: "Microsoft's standard framework for .NET backends.",
