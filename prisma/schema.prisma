@@ -55,12 +55,20 @@ model Project {
 // githubRepoFullName ("owner/repo") is set once the user points this repo at
 // a real GitHub repo to push AGENTS.md into (see src/lib/github-push.ts) —
 // null until then, since not every repo here is pushed anywhere.
+//
+// businessContext is free text covering domain rules/invariants the
+// structured aspects can't capture (e.g. "refunds can never exceed the
+// original charge"). Optionally drafted with AI, but that call happens
+// client-side with the user's own API key (src/components/
+// business-context-editor.tsx) — this field only ever receives the text
+// the user chose to save, never an API key or raw AI request/response.
 model Repo {
   id                 String             @id @default(cuid())
   projectId          String
   name               String
   kind               String
   githubRepoFullName String?
+  businessContext    String?
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
   project            Project            @relation(fields: [projectId], references: [id], onDelete: Cascade)

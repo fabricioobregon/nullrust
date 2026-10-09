@@ -3,6 +3,9 @@ import { db } from "@/lib/db";
 import { aspectsForRepo, fieldCount, answeredFieldCount } from "@/lib/aspects/registry";
 import { getRepoAnswers } from "@/lib/preferences";
 import { getRepoKind, isRepoKind } from "@/lib/repos";
+import { generateAgentsMd } from "@/lib/generate-agents-md";
+import { setBusinessContext } from "@/app/actions";
+import { BusinessContextEditor } from "@/components/business-context-editor";
 
 export const dynamic = "force-dynamic";
 
@@ -26,6 +29,7 @@ export default async function RepoAspectsPage({
     (sum, a) => sum + answeredFieldCount(a, answersByAspect[a.key] ?? {}),
     0
   );
+  const stackSummary = await generateAgentsMd(repo.name, repo.kind, answersByAspect);
 
   return (
     <div className="space-y-6">
@@ -97,6 +101,13 @@ export default async function RepoAspectsPage({
           );
         })}
       </ul>
+
+      <BusinessContextEditor
+        repoName={repo.name}
+        initialValue={repo.businessContext ?? ""}
+        stackSummary={stackSummary}
+        action={setBusinessContext.bind(null, repoId)}
+      />
     </div>
   );
 }

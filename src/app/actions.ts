@@ -122,7 +122,7 @@ export async function pushToGithub(repoId: string) {
   }
 
   const answers = await getRepoAnswers(repoId);
-  const markdown = await generateAgentsMd(repo.name, repo.kind, answers);
+  const markdown = await generateAgentsMd(repo.name, repo.kind, answers, repo.businessContext);
   const accessToken = decrypt(user.encryptedGithubToken);
 
   // redirect() throws to work, so it must run after (not inside) this
@@ -141,4 +141,15 @@ export async function pushToGithub(repoId: string) {
     query = `pushError=${encodeURIComponent(message)}`;
   }
   redirect(`${generatePath}?${query}`);
+}
+
+export async function setBusinessContext(repoId: string, formData: FormData) {
+  const user = await requireUser();
+  const repo = await db.repo.findUnique({ where: { id: repoId }, include: { project: true } });
+  if (!repo || repo.project.ownerId !== user.id) throw new Error(`Unknown repo: ${repoId}`);
+
+  const businessContext = String(formData.get("businessContext") ?? "").trim();
+  await db.repo.update({ where: { id: repoId }, data: { businessContext: businessContext || null } });
+  revalidatePath(`/projects/${repo.projectId}/repos/${repoId}`);
+  revalidatePath(`/projects/${repo.projectId}/repos/${repoId}/generate`);
 }

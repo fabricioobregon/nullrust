@@ -50,12 +50,17 @@ function renderAspect(aspect: AspectDefinition, repoAnswers: RepoAnswers, repoKi
 export async function generateAgentsMd(
   repoName: string,
   repoKind: RepoKind,
-  answersByAspect: Record<string, AspectAnswers>
+  answersByAspect: Record<string, AspectAnswers>,
+  businessContext?: string | null
 ): Promise<string> {
   const aspects = await aspectsForRepo(repoKind);
   const sections = aspects
     .map((aspect) => renderAspect(aspect, answersByAspect, repoKind))
     .filter((s): s is string => s !== null);
+
+  if (businessContext?.trim()) {
+    sections.push(["## 🏢 Business Context", "", businessContext.trim()].join("\n"));
+  }
 
   const header = [
     `# AGENTS.md — ${repoName}`,
