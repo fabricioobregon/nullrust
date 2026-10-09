@@ -16,7 +16,11 @@ export const auth: AspectDefinition = {
           label: "Auth provider / library",
           type: "single",
           options: [
-            { value: "nextauth", label: "NextAuth.js / Auth.js" },
+            {
+              value: "nextauth",
+              label: "NextAuth.js / Auth.js",
+              compatibleWhen: [{ aspectKey: "programming-language", fieldId: "language", values: ["typescript", "javascript"] }],
+            },
             { value: "auth0", label: "Auth0" },
             { value: "clerk", label: "Clerk" },
             { value: "cognito", label: "AWS Cognito" },
