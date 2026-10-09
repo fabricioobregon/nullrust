@@ -32,6 +32,16 @@ export const i18nLocalization: AspectDefinition = {
               compatibleWhen: [{ aspectKey: "framework", fieldId: "framework", values: ["nextjs"] }],
             },
             {
+              value: "nuxt-i18n",
+              label: "@nuxtjs/i18n",
+              compatibleWhen: [{ aspectKey: "framework", fieldId: "framework", values: ["nuxt"] }],
+            },
+            {
+              value: "vue-i18n",
+              label: "vue-i18n",
+              compatibleWhen: [{ aspectKey: "framework", fieldId: "framework", values: ["vue-vite"] }],
+            },
+            {
               value: "rails-i18n",
               label: "Rails I18n",
               compatibleWhen: [{ aspectKey: "framework", fieldId: "framework", values: ["rails"] }],
