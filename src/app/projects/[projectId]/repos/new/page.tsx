@@ -1,6 +1,6 @@
 import { repoKinds } from "@/lib/repos";
 import { createRepo } from "@/app/actions";
-import { requireProjectOwner } from "@/lib/auth/guards";
+import { getProjectOrNotFound } from "@/lib/auth/guards";
 
 export const dynamic = "force-dynamic";
 
@@ -11,7 +11,7 @@ export default async function NewRepoPage({
 }) {
   const { projectId } = await params;
 
-  const { project } = await requireProjectOwner(projectId);
+  const project = await getProjectOrNotFound(projectId);
 
   const action = createRepo.bind(null, projectId);
 

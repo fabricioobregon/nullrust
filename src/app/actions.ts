@@ -8,40 +8,34 @@ import { getAspect, isAspectInRepoScope } from "@/lib/aspects/registry";
 import { cleanupIncompatibleAnswers } from "@/lib/aspects/cleanup";
 import { AspectAnswers } from "@/lib/aspects/types";
 import { isRepoKind } from "@/lib/repos";
-import { requireUser } from "@/lib/auth/guards";
+import { getCurrentUser } from "@/lib/auth/session";
 import { decrypt } from "@/lib/auth/crypto";
 import { getRepoAnswers } from "@/lib/preferences";
 import { generateAgentsMd } from "@/lib/generate-agents-md";
 import { pushAgentsMdToGithub } from "@/lib/github-push";
 
 export async function createProject(formData: FormData) {
-  const user = await requireUser();
   const name = String(formData.get("name") ?? "").trim();
   if (!name) return;
 
-  const project = await db.project.create({ data: { name, ownerId: user.id } });
+  const project = await db.project.create({ data: { name } });
   redirect(`/projects/${project.id}`);
 }
 
 export async function deleteProject(projectId: string) {
-  const user = await requireUser();
-  const project = await db.project.findUnique({ where: { id: projectId } });
-  if (!project || project.ownerId !== user.id) throw new Error(`Unknown project: ${projectId}`);
-
   await db.project.delete({ where: { id: projectId } });
   revalidatePath("/");
   redirect("/");
 }
 
 export async function createRepo(projectId: string, formData: FormData) {
-  const user = await requireUser();
   const name = String(formData.get("name") ?? "").trim();
   const kind = String(formData.get("kind") ?? "");
   if (!name) throw new Error("Repo name is required");
   if (!isRepoKind(kind)) throw new Error(`Unknown repo kind: ${kind}`);
 
   const project = await db.project.findUnique({ where: { id: projectId } });
-  if (!project || project.ownerId !== user.id) throw new Error(`Unknown project: ${projectId}`);
+  if (!project) throw new Error(`Unknown project: ${projectId}`);
 
   const repo = await db.repo.create({ data: { projectId, name, kind } });
   revalidatePath(`/projects/${projectId}`);
@@ -49,9 +43,8 @@ export async function createRepo(projectId: string, formData: FormData) {
 }
 
 export async function deleteRepo(repoId: string) {
-  const user = await requireUser();
-  const repo = await db.repo.findUnique({ where: { id: repoId }, include: { project: true } });
-  if (!repo || repo.project.ownerId !== user.id) throw new Error(`Unknown repo: ${repoId}`);
+  const repo = await db.repo.findUnique({ where: { id: repoId } });
+  if (!repo) throw new Error(`Unknown repo: ${repoId}`);
 
   await db.repo.delete({ where: { id: repoId } });
   revalidatePath(`/projects/${repo.projectId}`);
@@ -59,11 +52,8 @@ export async function deleteRepo(repoId: string) {
 }
 
 export async function saveAspect(repoId: string, aspectKey: string, formData: FormData) {
-  const user = await requireUser();
-  const repo = await db.repo.findUnique({ where: { id: repoId }, include: { project: true } });
-  if (!repo || !isRepoKind(repo.kind) || repo.project.ownerId !== user.id) {
-    throw new Error(`Unknown repo: ${repoId}`);
-  }
+  const repo = await db.repo.findUnique({ where: { id: repoId } });
+  if (!repo || !isRepoKind(repo.kind)) throw new Error(`Unknown repo: ${repoId}`);
 
   const aspect = await getAspect(aspectKey);
   if (!aspect) throw new Error(`Unknown aspect: ${aspectKey}`);
@@ -106,9 +96,8 @@ export async function saveAspect(repoId: string, aspectKey: string, formData: Fo
 }
 
 export async function setGithubRepo(repoId: string, formData: FormData) {
-  const user = await requireUser();
-  const repo = await db.repo.findUnique({ where: { id: repoId }, include: { project: true } });
-  if (!repo || repo.project.ownerId !== user.id) throw new Error(`Unknown repo: ${repoId}`);
+  const repo = await db.repo.findUnique({ where: { id: repoId } });
+  if (!repo) throw new Error(`Unknown repo: ${repoId}`);
 
   const raw = String(formData.get("githubRepoFullName") ?? "").trim();
   if (raw && !/^[^/\s]+\/[^/\s]+$/.test(raw)) {
@@ -119,14 +108,19 @@ export async function setGithubRepo(repoId: string, formData: FormData) {
   revalidatePath(`/projects/${repo.projectId}/repos/${repoId}/generate`);
 }
 
+// The one action that genuinely needs a signed-in GitHub identity — pushing
+// requires the user's own access token. Everything else in this file is
+// intentionally open; see guards.ts's getProjectOrNotFound for why.
 export async function pushToGithub(repoId: string) {
-  const user = await requireUser();
-  const repo = await db.repo.findUnique({ where: { id: repoId }, include: { project: true } });
-  if (!repo || !isRepoKind(repo.kind) || repo.project.ownerId !== user.id) {
-    throw new Error(`Unknown repo: ${repoId}`);
-  }
+  const repo = await db.repo.findUnique({ where: { id: repoId } });
+  if (!repo || !isRepoKind(repo.kind)) throw new Error(`Unknown repo: ${repoId}`);
 
   const generatePath = `/projects/${repo.projectId}/repos/${repoId}/generate`;
+
+  const user = await getCurrentUser();
+  if (!user) {
+    redirect(`${generatePath}?pushError=${encodeURIComponent("Sign in with GitHub first, then try again.")}`);
+  }
   if (!repo.githubRepoFullName) {
     redirect(`${generatePath}?pushError=${encodeURIComponent("Set a GitHub repo below before pushing.")}`);
   }
@@ -154,9 +148,8 @@ export async function pushToGithub(repoId: string) {
 }
 
 export async function setBusinessContext(repoId: string, formData: FormData) {
-  const user = await requireUser();
-  const repo = await db.repo.findUnique({ where: { id: repoId }, include: { project: true } });
-  if (!repo || repo.project.ownerId !== user.id) throw new Error(`Unknown repo: ${repoId}`);
+  const repo = await db.repo.findUnique({ where: { id: repoId } });
+  if (!repo) throw new Error(`Unknown repo: ${repoId}`);
 
   const businessContext = String(formData.get("businessContext") ?? "").trim();
   await db.repo.update({ where: { id: repoId }, data: { businessContext: businessContext || null } });

@@ -33,7 +33,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
             <Link href="/" className="text-lg font-semibold tracking-tight">
               AGENTS<span className="text-indigo-600">.md</span> Builder
             </Link>
-            {user && (
+            {user ? (
               <div className="flex items-center gap-3">
                 <span className="flex items-center gap-2 text-sm text-slate-600">
                   {user.githubAvatarUrl && (
@@ -48,6 +48,13 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
                   </button>
                 </form>
               </div>
+            ) : (
+              // Optional, not required for anything except pushing to GitHub
+              // (see actions.ts's pushToGithub) — browsing/creating/configuring
+              // projects never requires this.
+              <a href="/api/auth/github" className="text-sm text-slate-500 hover:text-slate-700">
+                Sign in with GitHub
+              </a>
             )}
           </div>
         </header>

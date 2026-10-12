@@ -5,6 +5,7 @@ import { generateAgentsMd } from "@/lib/generate-agents-md";
 import { CopyButton } from "@/components/copy-button";
 import { isRepoKind } from "@/lib/repos";
 import { setGithubRepo, pushToGithub } from "@/app/actions";
+import { getCurrentUser } from "@/lib/auth/session";
 
 export const dynamic = "force-dynamic";
 
@@ -18,9 +19,10 @@ export default async function GeneratePage({
   const { projectId, repoId } = await params;
   const { prUrl, pushError } = await searchParams;
 
-  const [project, repo] = await Promise.all([
+  const [project, repo, user] = await Promise.all([
     db.project.findUnique({ where: { id: projectId } }),
     db.repo.findUnique({ where: { id: repoId } }),
+    getCurrentUser(),
   ]);
   if (!project || !repo || repo.projectId !== projectId) notFound();
   if (!isRepoKind(repo.kind)) notFound();
@@ -83,6 +85,14 @@ export default async function GeneratePage({
             {pushError}
           </div>
         )}
+        {!user && (
+          <p className="text-sm text-slate-500">
+            <a href="/api/auth/github" className="font-medium text-indigo-600 hover:text-indigo-700">
+              Sign in with GitHub
+            </a>{" "}
+            to enable pushing — not required for anything else on this page.
+          </p>
+        )}
 
         <form action={setGithubRepo.bind(null, repoId)} className="flex gap-3">
           <input
@@ -102,7 +112,7 @@ export default async function GeneratePage({
         <form action={pushToGithub.bind(null, repoId)}>
           <button
             type="submit"
-            disabled={!repo.githubRepoFullName}
+            disabled={!repo.githubRepoFullName || !user}
             className="rounded-md bg-indigo-600 px-4 py-2 font-medium text-white hover:bg-indigo-500 disabled:cursor-not-allowed disabled:bg-slate-300"
           >
             Open pull request

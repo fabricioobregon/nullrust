@@ -36,14 +36,6 @@ export async function GET(request: NextRequest) {
     },
   });
 
-  // One-time bridge for data that predates user accounts: if this user is
-  // the only one who has ever signed in, claim every still-unowned project
-  // instead of leaving pre-existing projects permanently orphaned.
-  const userCount = await db.user.count();
-  if (userCount === 1) {
-    await db.project.updateMany({ where: { ownerId: null }, data: { ownerId: user.id } });
-  }
-
   const response = NextResponse.redirect(new URL("/", request.url));
   response.cookies.set(SESSION_COOKIE, createSessionCookieValue(user.id), {
     httpOnly: true,
