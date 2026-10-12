@@ -91,18 +91,21 @@ database and standing one up just for tests would be a bigger change
 than the tests themselves. Anything that reads the DB-backed registry
 (e.g. `generateAgentsMd`) stays manually verified per change instead.
 
-## Two independent auth layers — don't conflate them
+## Two independent identities on one User row — don't conflate them
 
-There are two separate gates in this app, guarding two separate
-things, with no relationship to each other:
+`User` can represent two unrelated things, possibly on the same row,
+possibly on two separate rows for the same real person (see the
+model's own comment in `schema.prisma`) — there is no account-linking
+flow:
 
-1. **The site-wide password gate** (`src/proxy.ts` +
-   `src/lib/auth/app-password.ts`) — controls whether a visitor can
-   use the app *at all*. A shared secret (`APP_PASSWORD` env var), not
-   per-user accounts; the `/login` page checks it and sets a signed
-   `app_session` cookie. `src/proxy.ts` runs on every request except
-   `/login` and `/api/auth/*` and redirects to `/login` if that cookie
-   isn't present and validly signed.
+1. **Site login** (`email`/`passwordHash`, `src/lib/auth/password.ts`
+   for scrypt hashing, `src/app/login` and `src/app/signup`) —
+   controls whether a visitor can use the app *at all*. Real per-user
+   accounts via email+password, not a shared secret (an earlier
+   version of this was a single shared `APP_PASSWORD` — replaced once
+   real accounts were wanted). `src/proxy.ts` runs on every request
+   except `/login`, `/signup`, and `/api/auth/*`, and redirects to
+   `/login` unless `SITE_SESSION_COOKIE` is present and validly signed.
 
    Named `proxy.ts`, not `middleware.ts` — this Next.js version
    renamed the convention (the old name is deprecated and will error
@@ -110,30 +113,41 @@ things, with no relationship to each other:
    the process, so setting a `runtime` export here throws; don't add
    one back if copying patterns from older Next.js docs.
 
-2. **GitHub OAuth** (`src/lib/auth/session.ts`, `crypto.ts`,
-   `github.ts`) — identifies a user to GitHub specifically, scoped
-   *only* to `actions.ts`'s `pushToGithub`, which needs a real GitHub
-   access token to open a PR on the user's behalf. Nothing else in the
-   app checks this. Project/repo pages and every other mutating action
-   are intentionally open to anyone who's through the password gate —
-   there is no per-user project ownership anymore (there briefly was;
-   it was removed after it blocked every visitor, including the admin,
-   since the GitHub OAuth App hadn't been created yet — GitHub identity
-   and "can you use this app" must stay decoupled for exactly that
-   reason).
+2. **GitHub OAuth** (`githubId`/`githubLogin`/`encryptedGithubToken`,
+   `src/lib/auth/session.ts`, `crypto.ts`, `github.ts`) — identifies a
+   user to GitHub specifically, scoped *only* to `actions.ts`'s
+   `pushToGithub`, which needs a real GitHub access token to open a PR
+   on the user's behalf. Nothing else in the app checks this — project/
+   repo pages and every other mutating action are intentionally open
+   to anyone who's through the site-login gate. There is no per-user
+   project ownership (there briefly was; it was removed after it
+   blocked every visitor, including the admin, since the GitHub OAuth
+   App hadn't been created yet — GitHub identity and "can you use this
+   app" must stay decoupled for exactly that reason, and still are
+   even now that site login means something real).
 
-Both cookies are independent, stateless, HMAC-signed (reusing
-`SESSION_SECRET` for both rather than adding a second secret), with no
-server-side revocation before their 30-day expiry — a deliberate trade
-for not needing a session table. The GitHub access token itself is
-additionally encrypted at rest (`TOKEN_ENCRYPTION_KEY`,
+Both `SESSION_COOKIE` (GitHub) and `SITE_SESSION_COOKIE` (site login)
+use the exact same stateless, HMAC-signed scheme in `session.ts`
+(`createSessionCookieValue`/`verifySessionCookieValue`, reusing
+`SESSION_SECRET` for both rather than adding a second secret) — just
+under different cookie names, deliberately: a cookie value only ever
+means "this userId, validly signed" either way, and both ultimately
+authenticate the same real person, so there's no privilege boundary
+being protected by keeping the signing *mechanism* separate, only the
+*purpose* (don't let a push-capability check accidentally satisfy a
+site-login check or vice versa by reading the wrong cookie name). No
+server-side revocation before the 30-day expiry on either — a
+deliberate trade for not needing a session table. The GitHub access
+token itself is additionally encrypted at rest (`TOKEN_ENCRYPTION_KEY`,
 `src/lib/auth/crypto.ts`) since it grants real repo access.
-`APP_PASSWORD`/`SESSION_SECRET`/`TOKEN_ENCRYPTION_KEY` are set on
-Railway; `GITHUB_CLIENT_ID`/`GITHUB_CLIENT_SECRET` still need a GitHub
-OAuth App created by hand (no API for that) before GitHub sign-in
-itself does anything — until then, the app is fully usable via the
-password gate alone, and the GitHub-specific button just stays
-disabled with an explanatory hint.
+`SESSION_SECRET`/`TOKEN_ENCRYPTION_KEY` are set on Railway;
+`GITHUB_CLIENT_ID`/`GITHUB_CLIENT_SECRET` still need a GitHub OAuth App
+created by hand (no API for that) before GitHub sign-in itself does
+anything — until then, the app is fully usable via site login alone,
+and the GitHub-specific push button just stays disabled with an
+explanatory hint. (The old shared `APP_PASSWORD` env var may still be
+set on Railway but is no longer read anywhere — harmless, just
+vestigial; fine to remove whenever convenient.)
 
 ## Business context: why it's Anthropic-only
 

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { login } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -16,7 +17,7 @@ export default async function LoginPage({
           <h1 className="text-xl font-semibold">
             AGENTS<span className="text-indigo-600">.md</span> Builder
           </h1>
-          <p className="mt-1 text-sm text-slate-500">Enter the password to continue.</p>
+          <p className="mt-1 text-sm text-slate-500">Log in to continue.</p>
         </div>
 
         {error && (
@@ -26,20 +27,39 @@ export default async function LoginPage({
         <form action={login} className="space-y-4">
           <input type="hidden" name="from" value={from ?? "/"} />
           <input
+            type="email"
+            name="email"
+            required
+            autoFocus
+            placeholder="Email"
+            autoComplete="email"
+            className="w-full rounded-md border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          />
+          <input
             type="password"
             name="password"
             required
-            autoFocus
             placeholder="Password"
+            autoComplete="current-password"
             className="w-full rounded-md border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
           />
           <button
             type="submit"
             className="w-full rounded-md bg-indigo-600 px-4 py-2 font-medium text-white hover:bg-indigo-500"
           >
-            Continue
+            Log in
           </button>
         </form>
+
+        <p className="text-center text-sm text-slate-500">
+          No account?{" "}
+          <Link
+            href={`/signup${from ? `?from=${encodeURIComponent(from)}` : ""}`}
+            className="font-medium text-indigo-600 hover:text-indigo-700"
+          >
+            Sign up
+          </Link>
+        </p>
       </div>
     </div>
   );

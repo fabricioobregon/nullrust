@@ -118,7 +118,7 @@ export async function pushToGithub(repoId: string) {
   const generatePath = `/projects/${repo.projectId}/repos/${repoId}/generate`;
 
   const user = await getCurrentUser();
-  if (!user) {
+  if (!user || !user.encryptedGithubToken) {
     redirect(`${generatePath}?pushError=${encodeURIComponent("Sign in with GitHub first, then try again.")}`);
   }
   if (!repo.githubRepoFullName) {

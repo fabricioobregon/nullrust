@@ -16,16 +16,18 @@
  * 3. github-push.ts's branch-creation and create-vs-update file logic,
  *    against a mocked fetch — the actual GitHub API calls are the one
  *    part of the PR-push feature that's never been exercised for real.
- * 4. app-password.ts's signed site-wide-gate cookie (same failure modes as
- *    session.ts, independently re-checked since it's a separate
- *    implementation) and the password comparison's fail-closed behavior —
- *    this is now the only thing standing between an anonymous visitor and
- *    the whole app, not just one feature.
+ * 4. password.ts's scrypt hash/verify round-trip and failure modes — this
+ *    is what login/signup check, and it's now the only thing standing
+ *    between an anonymous visitor and the whole app via src/proxy.ts (the
+ *    signed-cookie part it feeds into is session.ts's existing
+ *    createSessionCookieValue/verifySessionCookieValue, already covered
+ *    by testSession — SITE_SESSION_COOKIE is just that same scheme under a
+ *    different cookie name, not new logic).
  */
 import { encrypt, decrypt } from "@/lib/auth/crypto";
 import { createSessionCookieValue, verifySessionCookieValue } from "@/lib/auth/session";
 import { pushAgentsMdToGithub } from "@/lib/github-push";
-import { createAppSessionCookieValue, isValidAppSessionCookie, checkPassword } from "@/lib/auth/app-password";
+import { hashPassword, verifyPassword } from "@/lib/auth/password";
 
 process.env.TOKEN_ENCRYPTION_KEY ??= Buffer.alloc(32, 7).toString("base64");
 process.env.SESSION_SECRET ??= "test-secret-not-for-prod";
@@ -149,37 +151,25 @@ async function testGithubPushUpdatesExistingFileWithSha() {
   );
 }
 
-function testAppPassword() {
-  const cookie = createAppSessionCookieValue();
-  assert(cookie.split(".").length === 2, "app-password: cookie should be payload.signature");
-  assert(isValidAppSessionCookie(cookie), "app-password: a freshly-signed cookie should verify");
-  assert(!isValidAppSessionCookie(undefined), "app-password: a missing cookie should fail verification");
+async function testPassword() {
+  const hash = await hashPassword("correct-password");
+  assert(hash !== "correct-password", "password: stored hash should not equal the plaintext");
+  assert(hash.includes(":"), "password: stored value should be salt:derivedKey");
+  assert(await verifyPassword("correct-password", hash), "password: the right password should verify");
+  assert(!(await verifyPassword("wrong-password", hash)), "password: a wrong password should fail");
+  assert(!(await verifyPassword("correct-password-but-longer", hash)), "password: a longer wrong candidate should fail, not throw");
 
-  const [payload, signature] = cookie.split(".");
-  assert(!isValidAppSessionCookie(`${payload}.${signature.slice(0, -2)}AA`), "app-password: a tampered signature should fail verification");
+  const hash2 = await hashPassword("correct-password");
+  assert(hash !== hash2, "password: hashing the same password twice should produce different salts/output");
+  assert(await verifyPassword("correct-password", hash2), "password: the second hash should still verify correctly despite differing from the first");
 
-  const expiredCookie = createAppSessionCookieValue(Date.now() - 1000);
-  assert(!isValidAppSessionCookie(expiredCookie), "app-password: a validly-signed but expired cookie should fail verification");
-
-  const original = process.env.APP_PASSWORD;
-  try {
-    process.env.APP_PASSWORD = "correct-password";
-    assert(checkPassword("correct-password"), "app-password: the right password should pass");
-    assert(!checkPassword("wrong-password"), "app-password: a wrong password should fail");
-    assert(!checkPassword("correct-password-but-longer"), "app-password: a longer wrong candidate should fail, not throw");
-
-    delete process.env.APP_PASSWORD;
-    assert(!checkPassword("anything"), "app-password: with APP_PASSWORD unset, every check should fail closed, not throw");
-  } finally {
-    if (original === undefined) delete process.env.APP_PASSWORD;
-    else process.env.APP_PASSWORD = original;
-  }
+  assert(!(await verifyPassword("anything", "not-a-valid-stored-format")), "password: a malformed stored value should fail, not throw");
 }
 
 async function main() {
   testCrypto();
   testSession();
-  testAppPassword();
+  await testPassword();
   await testGithubPushCreatesNewFile();
   await testGithubPushUpdatesExistingFileWithSha();
 
@@ -187,7 +177,7 @@ async function main() {
     console.error(`test-unit: FAILED (${failures} failure(s))`);
     process.exit(1);
   }
-  console.log("test-unit: OK — crypto, session, app-password, and github-push all passed.");
+  console.log("test-unit: OK — crypto, session, password, and github-push all passed.");
 }
 
 main();

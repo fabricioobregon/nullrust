@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Link from "next/link";
-import { getCurrentUser } from "@/lib/auth/session";
+import { getCurrentUser, getSiteUser } from "@/lib/auth/session";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -20,7 +20,7 @@ export const metadata: Metadata = {
 };
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
-  const user = await getCurrentUser();
+  const [user, siteUser] = await Promise.all([getCurrentUser(), getSiteUser()]);
 
   return (
     <html
@@ -34,6 +34,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
               AGENTS<span className="text-indigo-600">.md</span> Builder
             </Link>
             <div className="flex items-center gap-3">
+              {siteUser?.email && <span className="text-sm text-slate-600">{siteUser.email}</span>}
               {user ? (
                 <span className="flex items-center gap-2 text-sm text-slate-600">
                   {user.githubAvatarUrl && (
@@ -44,9 +45,9 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
                 </span>
               ) : (
                 // Optional, not required for anything except pushing to GitHub
-                // (see actions.ts's pushToGithub) — browsing/creating/configuring
-                // projects never requires this, only the site-wide password
-                // gate (middleware.ts) does.
+                // (see actions.ts's pushToGithub) — logging into the site at
+                // all (src/proxy.ts) only ever needs the email+password
+                // session above, never this.
                 <a href="/api/auth/github" className="text-sm text-slate-500 hover:text-slate-700">
                   Sign in with GitHub
                 </a>

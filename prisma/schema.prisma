@@ -11,17 +11,33 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// A signed-in GitHub user. githubId is GitHub's own numeric user id
-// (stringified) — stable across username changes, unlike githubLogin.
-// encryptedGithubToken is the OAuth access token, encrypted at rest with
-// AES-256-GCM (see src/lib/auth/crypto.ts) since it grants repo access on
-// the user's behalf.
+// A row can represent either (or both) of two unrelated identities on the
+// same person — see CLAUDE.md's "Two independent identities on one User
+// row" note:
+//
+// 1. A site account: email + passwordHash (scrypt, see
+//    src/lib/auth/password.ts) — what src/app/signup and src/app/login
+//    create/check. This is what gates the whole app (src/proxy.ts).
+// 2. A GitHub identity: githubId (GitHub's own numeric user id,
+//    stringified — stable across username changes, unlike githubLogin) +
+//    encryptedGithubToken (the OAuth access token, encrypted at rest with
+//    AES-256-GCM, see src/lib/auth/crypto.ts, since it grants repo access
+//    on the user's behalf). Only ever used by actions.ts's pushToGithub.
+//
+// Both halves are nullable because a row only ever needs one of them filled
+// in — a site-account-only user never pushes to GitHub, and the GitHub
+// OAuth callback's db.user.upsert creates a githubId-only row with no site
+// login at all. There's no account-linking flow: signing up and later
+// clicking "Sign in with GitHub" creates a second, separate User row for
+// the same person rather than merging into the first.
 model User {
   id                   String    @id @default(cuid())
-  githubId             String    @unique
-  githubLogin          String
+  email                String?   @unique
+  passwordHash         String?
+  githubId             String?   @unique
+  githubLogin          String?
   githubAvatarUrl      String?
-  encryptedGithubToken String
+  encryptedGithubToken String?
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
   projects             Project[]
