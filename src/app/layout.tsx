@@ -33,8 +33,8 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
             <Link href="/" className="text-lg font-semibold tracking-tight">
               AGENTS<span className="text-indigo-600">.md</span> Builder
             </Link>
-            {user ? (
-              <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3">
+              {user ? (
                 <span className="flex items-center gap-2 text-sm text-slate-600">
                   {user.githubAvatarUrl && (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -42,20 +42,21 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
                   )}
                   {user.githubLogin}
                 </span>
-                <form action="/api/auth/logout" method="post">
-                  <button type="submit" className="text-sm text-slate-500 hover:text-slate-700">
-                    Sign out
-                  </button>
-                </form>
-              </div>
-            ) : (
-              // Optional, not required for anything except pushing to GitHub
-              // (see actions.ts's pushToGithub) — browsing/creating/configuring
-              // projects never requires this.
-              <a href="/api/auth/github" className="text-sm text-slate-500 hover:text-slate-700">
-                Sign in with GitHub
-              </a>
-            )}
+              ) : (
+                // Optional, not required for anything except pushing to GitHub
+                // (see actions.ts's pushToGithub) — browsing/creating/configuring
+                // projects never requires this, only the site-wide password
+                // gate (middleware.ts) does.
+                <a href="/api/auth/github" className="text-sm text-slate-500 hover:text-slate-700">
+                  Sign in with GitHub
+                </a>
+              )}
+              <form action="/api/auth/logout" method="post">
+                <button type="submit" className="text-sm text-slate-500 hover:text-slate-700">
+                  Sign out
+                </button>
+              </form>
+            </div>
           </div>
         </header>
         <main className="flex-1">{children}</main>

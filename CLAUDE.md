@@ -91,26 +91,49 @@ database and standing one up just for tests would be a bigger change
 than the tests themselves. Anything that reads the DB-backed registry
 (e.g. `generateAgentsMd`) stays manually verified per change instead.
 
-## Users, sessions, and ownership
+## Two independent auth layers — don't conflate them
 
-`Project.ownerId` (nullable only for rows that predate accounts) is
-the whole access-control model — every page that loads a project or
-repo by id, and every mutating action in `actions.ts`, must check it
-independently. Pages rely on `requireProjectOwner()` in
-`src/lib/auth/guards.ts` (404s, not redirects, on a mismatch, so a
-signed-in user learns nothing about another user's project ids), but
-a Server Action can be invoked directly without ever rendering the
-page that would have gated it — so every mutating action re-checks
-ownership itself rather than trusting a page-level guard already ran.
+There are two separate gates in this app, guarding two separate
+things, with no relationship to each other:
 
-Sessions are a stateless HMAC-signed cookie (`SESSION_SECRET`), not a
-DB-backed table — no server-side revocation before the 30-day expiry,
-traded deliberately for not needing a session store. The GitHub OAuth
-access token is encrypted at rest (`TOKEN_ENCRYPTION_KEY`,
-`src/lib/auth/crypto.ts`) since it grants repo access on the user's
-behalf. Both secrets are already set on Railway; `GITHUB_CLIENT_ID`/
-`GITHUB_CLIENT_SECRET` still need a GitHub OAuth App the user creates
-by hand (no API for that) before login actually works end to end.
+1. **The site-wide password gate** (`src/proxy.ts` +
+   `src/lib/auth/app-password.ts`) — controls whether a visitor can
+   use the app *at all*. A shared secret (`APP_PASSWORD` env var), not
+   per-user accounts; the `/login` page checks it and sets a signed
+   `app_session` cookie. `src/proxy.ts` runs on every request except
+   `/login` and `/api/auth/*` and redirects to `/login` if that cookie
+   isn't present and validly signed.
+
+   Named `proxy.ts`, not `middleware.ts` — this Next.js version
+   renamed the convention (the old name is deprecated and will error
+   at build time) and changed the default/only runtime to Node.js in
+   the process, so setting a `runtime` export here throws; don't add
+   one back if copying patterns from older Next.js docs.
+
+2. **GitHub OAuth** (`src/lib/auth/session.ts`, `crypto.ts`,
+   `github.ts`) — identifies a user to GitHub specifically, scoped
+   *only* to `actions.ts`'s `pushToGithub`, which needs a real GitHub
+   access token to open a PR on the user's behalf. Nothing else in the
+   app checks this. Project/repo pages and every other mutating action
+   are intentionally open to anyone who's through the password gate —
+   there is no per-user project ownership anymore (there briefly was;
+   it was removed after it blocked every visitor, including the admin,
+   since the GitHub OAuth App hadn't been created yet — GitHub identity
+   and "can you use this app" must stay decoupled for exactly that
+   reason).
+
+Both cookies are independent, stateless, HMAC-signed (reusing
+`SESSION_SECRET` for both rather than adding a second secret), with no
+server-side revocation before their 30-day expiry — a deliberate trade
+for not needing a session table. The GitHub access token itself is
+additionally encrypted at rest (`TOKEN_ENCRYPTION_KEY`,
+`src/lib/auth/crypto.ts`) since it grants real repo access.
+`APP_PASSWORD`/`SESSION_SECRET`/`TOKEN_ENCRYPTION_KEY` are set on
+Railway; `GITHUB_CLIENT_ID`/`GITHUB_CLIENT_SECRET` still need a GitHub
+OAuth App created by hand (no API for that) before GitHub sign-in
+itself does anything — until then, the app is fully usable via the
+password gate alone, and the GitHub-specific button just stays
+disabled with an explanatory hint.
 
 ## Business context: why it's Anthropic-only
 
